@@ -1,9 +1,10 @@
-export class Pedido{
+export class Pedido {
     constructor(
-        public modalidad:string,
-        public montoTotal:number,
-        public estado:string,
+        public modalidad: string,
+        public montoTotal: number,
+        public estado: string,
         public idCliente: number,
-        public idPedido?: number
-    ){}
+        public idPedido?: number,
+        public hamburguesas?: { idHamburguesa: number; nombre: string }[]  
+    ) {}
 }

@@ -5,19 +5,51 @@ import { ResultSetHeader, RowDataPacket } from "mysql2";
 
 export class PedidoRepository implements Repository<Pedido> {
     public async findAll(): Promise<Pedido[] | undefined> {
-        const [pedidos] = await pool.query('select * from pedidos ped inner join hamburguesas_pedidos hp on hp.idPedido = ped.idPedido inner join hamburguesas h on h.idHamburguesa = hp.idHamburguesa');
-        return pedidos as Pedido[];
+        const [pedidos] = await pool.query<RowDataPacket[]>(`
+            SELECT ped.*, 
+                   GROUP_CONCAT(hp.idHamburguesa) AS hamburguesasIds,
+                   GROUP_CONCAT(h.nombre) AS hamburguesasNombres
+            FROM pedidos ped 
+            LEFT JOIN hamburguesas_pedidos hp ON hp.idPedido = ped.idPedido
+            LEFT JOIN hamburguesas h ON h.idHamburguesa = hp.idHamburguesa
+            GROUP BY ped.idPedido
+        `);
+
+        return pedidos.map(row => ({
+            ...row,
+            hamburguesas: row.hamburguesasIds ? row.hamburguesasIds.split(',').map((id: string, index: number) => ({
+                idHamburguesa: parseInt(id, 10),
+                nombre: row.hamburguesasNombres.split(',')[index]
+            })) : []
+        })) as Pedido[];
     }
 
     public async findOne(item: { id: string }): Promise<Pedido | undefined> {
         const id = Number.parseInt(item.id);
-        const [pedidos] = await pool.query<RowDataPacket[]>('select * from pedidos where idPedido = ?', [id]);
-        if (pedidos.length === 0) {
-            return undefined;
-        }
-        const pedido = pedidos[0] as Pedido;
-        return pedido;
+        const [pedidos] = await pool.query<RowDataPacket[]>(`
+            SELECT ped.*, 
+                   GROUP_CONCAT(hp.idHamburguesa) AS hamburguesasIds,
+                   GROUP_CONCAT(h.nombre) AS hamburguesasNombres
+            FROM pedidos ped 
+            LEFT JOIN hamburguesas_pedidos hp ON hp.idPedido = ped.idPedido
+            LEFT JOIN hamburguesas h ON h.idHamburguesa = hp.idHamburguesa
+            WHERE ped.idPedido = ?
+            GROUP BY ped.idPedido
+        `, [id]);
+
+        if (pedidos.length === 0) return undefined;
+
+        const pedido = pedidos[0];
+        pedido.hamburguesas = pedido.hamburguesasIds ? pedido.hamburguesasIds.split(',').map((id: string, index: number) => ({
+            idHamburguesa: parseInt(id, 10),
+            nombre: pedido.hamburguesasNombres.split(',')[index]
+        })) : [];
+        
+        return pedido as Pedido;
     }
+
+
+
 
 
 

@@ -16,20 +16,22 @@ function sanitizePedidoInput(req: Request, res: Response, next: NextFunction) {
 }
 
 async function findAll(req: Request, res: Response) {
-    res.json({ data: await repository_4.findAll() });
+    const pedidos = await repository_4.findAll();
+    res.json({ data: pedidos });
 }
 
 async function findOne(req: Request, res: Response) {
     const pedido = await repository_4.findOne({ id: req.params.idPedido });
     if (!pedido) {
         res.status(404).send({ message: 'Pedido Not Found' });
+    } else {
+        res.json(pedido);
     }
-    res.json(pedido);
 }
 
 async function add(req: Request, res: Response) {
     const enter = req.body.sanitizedEnter;
-    const hamburguesas = req.body.hamburguesas; // Lista de hamburguesas en el pedido [{ idHamburguesa, cantidad }, ...]
+    const hamburguesas = req.body.hamburguesas; 
 
     if (!hamburguesas || hamburguesas.length === 0) {
         return res.status(400).send({ message: 'Debe incluir al menos una hamburguesa en el pedido' });
