@@ -5,6 +5,6 @@ export class Pedido {
         public estado: string,
         public idCliente: number,
         public idPedido?: number,
-        public hamburguesas?: { idHamburguesa: number; nombre: string }[]  
+        public hamburguesas?: { idHamburguesa: number; nombre: string; cantidad: number }[]  
     ) {}
 }

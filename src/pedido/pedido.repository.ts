@@ -8,41 +8,45 @@ export class PedidoRepository implements Repository<Pedido> {
         const [pedidos] = await pool.query<RowDataPacket[]>(`
             SELECT ped.*, 
                    GROUP_CONCAT(hp.idHamburguesa) AS hamburguesasIds,
-                   GROUP_CONCAT(h.nombre) AS hamburguesasNombres
+                   GROUP_CONCAT(h.nombre) AS hamburguesasNombres,
+                   GROUP_CONCAT(hp.cantidad) AS hamburguesasCantidades
             FROM pedidos ped 
             LEFT JOIN hamburguesas_pedidos hp ON hp.idPedido = ped.idPedido
             LEFT JOIN hamburguesas h ON h.idHamburguesa = hp.idHamburguesa
             GROUP BY ped.idPedido
         `);
-
+    
         return pedidos.map(row => ({
             ...row,
             hamburguesas: row.hamburguesasIds ? row.hamburguesasIds.split(',').map((id: string, index: number) => ({
                 idHamburguesa: parseInt(id, 10),
-                nombre: row.hamburguesasNombres.split(',')[index]
+                nombre: row.hamburguesasNombres.split(',')[index],
+                cantidad: parseInt(row.hamburguesasCantidades.split(',')[index], 10)
             })) : []
         })) as Pedido[];
     }
-
+    
     public async findOne(item: { id: string }): Promise<Pedido | undefined> {
         const id = Number.parseInt(item.id);
         const [pedidos] = await pool.query<RowDataPacket[]>(`
             SELECT ped.*, 
                    GROUP_CONCAT(hp.idHamburguesa) AS hamburguesasIds,
-                   GROUP_CONCAT(h.nombre) AS hamburguesasNombres
+                   GROUP_CONCAT(h.nombre) AS hamburguesasNombres,
+                   GROUP_CONCAT(hp.cantidad) AS hamburguesasCantidades
             FROM pedidos ped 
             LEFT JOIN hamburguesas_pedidos hp ON hp.idPedido = ped.idPedido
             LEFT JOIN hamburguesas h ON h.idHamburguesa = hp.idHamburguesa
             WHERE ped.idPedido = ?
             GROUP BY ped.idPedido
         `, [id]);
-
+    
         if (pedidos.length === 0) return undefined;
-
+    
         const pedido = pedidos[0];
         pedido.hamburguesas = pedido.hamburguesasIds ? pedido.hamburguesasIds.split(',').map((id: string, index: number) => ({
             idHamburguesa: parseInt(id, 10),
-            nombre: pedido.hamburguesasNombres.split(',')[index]
+            nombre: pedido.hamburguesasNombres.split(',')[index],
+            cantidad: parseInt(pedido.hamburguesasCantidades.split(',')[index], 10)
         })) : [];
         
         return pedido as Pedido;
