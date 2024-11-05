@@ -3,7 +3,7 @@ import { Precio } from "./precio.entity.js";
 import { RowDataPacket } from "mysql2";
 
 export class PrecioRepository {
-    public async findCurrentPrice(idHamburguesa: number): Promise<number | null> {
+    public async getPrecioActual(idHamburguesa: number): Promise<number | null> {
         const [rows] = await pool.query<RowDataPacket[]>(
             `SELECT precio FROM precios 
              WHERE idHamburguesa = ? AND fechaVigencia <= CURDATE() 

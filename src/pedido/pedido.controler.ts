@@ -8,7 +8,6 @@ function sanitizePedidoInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedEnter = {
         idPedido: req.body.idPedido,
         modalidad: req.body.modalidad,
-        montoTotal: req.body.montoTotal,
         estado: req.body.estado,
         idCliente: req.body.idCliente,
     };
@@ -37,9 +36,12 @@ async function add(req: Request, res: Response) {
         return res.status(400).send({ message: 'Debe incluir al menos una hamburguesa en el pedido' });
     }
 
-    const pedidoEnter = new Pedido(enter.modalidad, enter.montoTotal, enter.estado, enter.idCliente);
+    
+    const pedidoEnter = new Pedido(enter.modalidad, 0, enter.estado, enter.idCliente);
+    pedidoEnter.hamburguesas = hamburguesas;
+
     try {
-        const pedido = await repository_4.add(pedidoEnter);
+        const pedido = await repository_4.add(pedidoEnter); // El montoTotal se calcula en el repositorio
         return res.status(201).send({ message: 'PEDIDO CREADO', data: pedido });
     } catch (error: any) {
         return res.status(400).send({ message: error.message });
@@ -48,14 +50,24 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
     req.body.sanitizedEnter.idPedido = req.params.idPedido;
-    const hamburguesas = req.body.hamburguesas; // Lista de hamburguesas en el pedido [{ idHamburguesa, cantidad }, ...]
+    const hamburguesas = req.body.hamburguesas; 
 
     if (!hamburguesas || hamburguesas.length === 0) {
         return res.status(400).send({ message: 'Debe incluir al menos una hamburguesa en el pedido' });
     }
 
+    
+    const pedidoEnter = new Pedido(
+        req.body.sanitizedEnter.modalidad,
+        0, 
+        req.body.sanitizedEnter.estado,
+        req.body.sanitizedEnter.idCliente
+    );
+    pedidoEnter.idPedido = parseInt(req.params.idPedido, 10);
+    pedidoEnter.hamburguesas = hamburguesas;
+
     try {
-        const pedido = await repository_4.update(req.params.idPedido, req.body.sanitizedEnter);
+        const pedido = await repository_4.update(req.params.idPedido, pedidoEnter); 
         if (!pedido) {
             return res.status(404).send({ message: 'Pedido Not Found' });
         }

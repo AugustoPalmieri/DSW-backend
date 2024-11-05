@@ -2,6 +2,9 @@ import { Repository } from "../shared/repository.js";
 import { Pedido } from "./pedido.entity.js";
 import { pool } from "../shared/db/conn.mysql.js";
 import { ResultSetHeader, RowDataPacket } from "mysql2";
+import { PrecioRepository } from "../precio/precio.repository.js";
+
+const precioRepository = new PrecioRepository();
 
 export class PedidoRepository implements Repository<Pedido> {
     public async findAll(): Promise<Pedido[] | undefined> {
@@ -16,16 +19,34 @@ export class PedidoRepository implements Repository<Pedido> {
             GROUP BY ped.idPedido
         `);
     
-        return pedidos.map(row => ({
-            ...row,
-            hamburguesas: row.hamburguesasIds ? row.hamburguesasIds.split(',').map((id: string, index: number) => ({
-                idHamburguesa: parseInt(id, 10),
-                nombre: row.hamburguesasNombres.split(',')[index],
-                cantidad: parseInt(row.hamburguesasCantidades.split(',')[index], 10)
-            })) : []
-        })) as Pedido[];
+        const pedidosConMontoTotal = await Promise.all(
+            pedidos.map(async row => {
+                const hamburguesas = row.hamburguesasIds ? row.hamburguesasIds.split(',').map((id: string, index: number) => ({
+                    idHamburguesa: parseInt(id, 10),
+                    nombre: row.hamburguesasNombres.split(',')[index],
+                    cantidad: parseInt(row.hamburguesasCantidades.split(',')[index], 10)
+                })) : [];
+
+                
+                let montoTotal = 0;
+                for (const hamburguesa of hamburguesas) {
+                    const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
+                    if (precio) {
+                        montoTotal += precio * hamburguesa.cantidad;
+                    }
+                }
+
+                return {
+                    ...row,
+                    hamburguesas,
+                    montoTotal
+                } as Pedido;
+            })
+        );
+
+        return pedidosConMontoTotal;
     }
-    
+
     public async findOne(item: { id: string }): Promise<Pedido | undefined> {
         const id = Number.parseInt(item.id);
         const [pedidos] = await pool.query<RowDataPacket[]>(`
@@ -43,34 +64,66 @@ export class PedidoRepository implements Repository<Pedido> {
         if (pedidos.length === 0) return undefined;
     
         const pedido = pedidos[0];
-        pedido.hamburguesas = pedido.hamburguesasIds ? pedido.hamburguesasIds.split(',').map((id: string, index: number) => ({
+        const hamburguesas = pedido.hamburguesasIds ? pedido.hamburguesasIds.split(',').map((id: string, index: number) => ({
             idHamburguesa: parseInt(id, 10),
             nombre: pedido.hamburguesasNombres.split(',')[index],
             cantidad: parseInt(pedido.hamburguesasCantidades.split(',')[index], 10)
         })) : [];
+
         
-        return pedido as Pedido;
-    }
-
-
-
-
-
-
-
-    public async add(pedidoInput: Pedido): Promise<Pedido | undefined>{ ///puede ser la funct de sanitize
-        const{idPedido, ...pedidoRow} = pedidoInput
-        const [result] = await pool.query<ResultSetHeader> ('insert into pedidos set ?', [pedidoRow])
-        pedidoInput.idPedido = result.insertId
-        return pedidoInput;
-
-    }
-    public async update(id:string, pedidoInput:Pedido): Promise<Pedido | undefined> {
-        const pedidoId= Number.parseInt(id)
-        const {idPedido, ...pedidoRow} = pedidoInput
-        await pool.query ('update pedidos set? where idPedido=?', [pedidoRow, pedidoId])
-        return await this.findOne({id})
+        let montoTotal = 0;
+        for (const hamburguesa of hamburguesas) {
+            const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
+            if (precio) {
+                montoTotal += precio * hamburguesa.cantidad;
+            }
         }
+
+        return {
+            ...pedido,
+            hamburguesas,
+            montoTotal
+        } as Pedido;
+    }
+
+    public async add(pedidoInput: Pedido): Promise<Pedido | undefined> {
+        
+        let montoTotal = 0;
+        const hamburguesas = pedidoInput.hamburguesas || [];
+    
+        for (const hamburguesa of hamburguesas) {
+            const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
+            if (precio) {
+                montoTotal += precio * hamburguesa.cantidad;
+            }
+        }
+    
+        const { idPedido, ...pedidoRow } = { ...pedidoInput, montoTotal };
+        const [result] = await pool.query<ResultSetHeader>('INSERT INTO pedidos SET ?', [pedidoRow]);
+        pedidoInput.idPedido = result.insertId;
+        return pedidoInput;
+    }
+    
+    public async update(id: string, pedidoInput: Pedido): Promise<Pedido | undefined> {
+        const pedidoId = Number.parseInt(id);
+    
+        
+        let montoTotal = 0;
+        const hamburguesas = pedidoInput.hamburguesas || []; 
+    
+        for (const hamburguesa of hamburguesas) {
+            const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
+            if (precio) {
+                montoTotal += precio * hamburguesa.cantidad;
+            }
+        }
+    
+        const { idPedido, ...pedidoRow } = { ...pedidoInput, montoTotal };
+        await pool.query('UPDATE pedidos SET ? WHERE idPedido = ?', [pedidoRow, pedidoId]);
+        return await this.findOne({ id });
+    }
+    
+
     public async delete(item: { id: string }): Promise<Pedido | undefined> {
         try {
             const pedidoToDelete = await this.findOne(item);
@@ -90,3 +143,4 @@ export class PedidoRepository implements Repository<Pedido> {
         }
     }
 }
+
