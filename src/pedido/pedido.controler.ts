@@ -4,7 +4,7 @@ import { Pedido } from "./pedido.entity.js";
 
 const repository_4 = new PedidoRepository();
 
-// Middleware para sanitizar los datos de entrada
+
 function sanitizePedidoInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedEnter = {
         idPedido: req.body.idPedido,
@@ -15,13 +15,13 @@ function sanitizePedidoInput(req: Request, res: Response, next: NextFunction) {
     next();
 }
 
-// Función para obtener todos los pedidos
+
 async function findAll(req: Request, res: Response) {
     const pedidos = await repository_4.findAll();
     res.json({ data: pedidos });
 }
 
-// Función para obtener un pedido por ID
+
 async function findOne(req: Request, res: Response) {
     const pedido = await repository_4.findOne({ id: req.params.idPedido });
     if (!pedido) {
@@ -31,7 +31,7 @@ async function findOne(req: Request, res: Response) {
     }
 }
 
-// Función para agregar un nuevo pedido
+
 async function add(req: Request, res: Response) {
     const enter = req.body.sanitizedEnter;
     const hamburguesas = req.body.hamburguesas;
@@ -51,7 +51,7 @@ async function add(req: Request, res: Response) {
     }
 }
 
-// Función para actualizar un pedido (tanto la modalidad como las hamburguesas)
+
 async function update(req: Request, res: Response) {
     req.body.sanitizedEnter.idPedido = req.params.idPedido;
     const hamburguesas = req.body.hamburguesas;
@@ -80,16 +80,30 @@ async function update(req: Request, res: Response) {
     }
 }
 
-// Función para eliminar un pedido
+
 async function remove(req: Request, res: Response) {
     const id = req.params.idPedido;
-    const pedido = await repository_4.delete({ id });
+
+    // Obtener el pedido antes de eliminarlo para verificar su estado
+    const pedido = await repository_4.findOne({ id });
     if (!pedido) {
-        res.status(404).send({ message: 'PEDIDO Not Found' });
-    } else {
-        res.status(200).send({ message: 'PEDIDO ELIMINADO CORRECTAMENTE' });
+        return res.status(404).send({ message: 'Pedido no encontrado' });
+    }
+
+    // Verificar el estado del pedido
+    if (pedido.estado !== 'ENTREGADO') {
+        return res.status(400).send({ message: 'No se puede eliminar un pedido que no ha sido entregado' });
+    }
+
+    try {
+        // Intentar eliminar el pedido si el estado es "ENTREGADO"
+        await repository_4.delete({ id });
+        return res.status(200).send({ message: 'Pedido eliminado correctamente' });
+    } catch (error: any) {
+        return res.status(400).send({ message: `Error al eliminar el pedido: ${error.message}` });
     }
 }
+
 
 // **Nueva función para actualizar el estado de un pedido**
 async function updateEstado(req: Request, res: Response) {

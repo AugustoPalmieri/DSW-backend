@@ -104,14 +104,13 @@ export class PedidoRepository implements Repository<Pedido> {
             idCliente: pedidoInput.idCliente
         };
 
-        // Insertar en la tabla pedidos
+        
         const [result] = await pool.query<ResultSetHeader>('INSERT INTO pedidos SET ?', pedidoRow);
         pedidoInput.idPedido = result.insertId;
 
-        // Preparar datos para insertar en hamburguesas_pedidos
+        
         const hamburguesaPedidos = hamburguesas.map(h => [result.insertId, h.idHamburguesa, h.cantidad]);
 
-        // Inserción múltiple en hamburguesas_pedidos
         const query = 'INSERT INTO hamburguesas_pedidos (idPedido, idHamburguesa, cantidad) VALUES ?';
         await pool.query(query, [hamburguesaPedidos]);
         return pedidoInput;
@@ -146,24 +145,24 @@ export class PedidoRepository implements Repository<Pedido> {
         try {
             const pedidoToDelete = await this.findOne(item);
             const pedidoId = Number.parseInt(item.id);
-
+    
             if (!pedidoToDelete) {
                 throw new Error("Pedido no encontrado");
             }
+    
+            
+            await pool.query('DELETE FROM hamburguesas_pedidos WHERE idPedido = ?', [pedidoId]);
 
-            // Eliminar el pedido y sus relaciones
-            await pool.query('DELETE FROM hamburguesas_pedido WHERE idPedido = ?', [pedidoId]);
             await pool.query('DELETE FROM pedidos WHERE idPedido = ?', [pedidoId]);
-
+    
             return pedidoToDelete;
         } catch (error: any) {
             throw new Error('Unable to delete pedido');
         }
-        
     }
+    
     public async updateEstado(idPedido: string, estado: string) {
         try {
-            // Asegurarse de que el estado sea una cadena antes de pasarlo a la consulta
             const result = await pool.query(`
                 UPDATE pedidos
                 SET estado = ?
