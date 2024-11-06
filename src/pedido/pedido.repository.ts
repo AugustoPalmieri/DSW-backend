@@ -159,14 +159,26 @@ export class PedidoRepository implements Repository<Pedido> {
         } catch (error: any) {
             throw new Error('Unable to delete pedido');
         }
+        
     }
-    public async updateEstado(idPedido: string, estado: string): Promise<Pedido | undefined> {
-        const pedidoId = Number.parseInt(idPedido);
+    public async updateEstado(idPedido: string, estado: string) {
+        try {
+            // Asegurarse de que el estado sea una cadena antes de pasarlo a la consulta
+            const result = await pool.query(`
+                UPDATE pedidos
+                SET estado = ?
+                WHERE idPedido = ?`, 
+                [estado, idPedido]
+            );
+    
+            // Verificar si se actualizó correctamente
+    
+            return { idPedido, estado };  // Devolver el estado actualizado
+        } catch (error: any) {
+            throw new Error(error.message);  // Manejo de errores
+        }
+    }
+    }
 
-        // Actualizamos el estado del pedido
-        await pool.query('UPDATE pedidos SET estado = ? WHERE idPedido = ?', [estado, pedidoId]);
 
-        // Devolvemos el pedido actualizado
-        return await this.findOne({ id: idPedido });
-}
-}
+

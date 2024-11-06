@@ -68,3 +68,12 @@ Content-Type: application/json
 
 ### borrar un pedido
 DELETE http://localhost:3000/api/pedidos/13
+
+### Cambiar estado
+PUT http://localhost:3000/api/pedidos/2/estado
+Content-Type: application/json
+
+{
+    "estado": "ENTREGADO"
+}
+

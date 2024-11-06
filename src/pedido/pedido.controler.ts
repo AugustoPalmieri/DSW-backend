@@ -94,21 +94,29 @@ async function remove(req: Request, res: Response) {
 // **Nueva función para actualizar el estado de un pedido**
 async function updateEstado(req: Request, res: Response) {
     const idPedido = req.params.idPedido;
-    const { estado } = req.body; // Extraemos el estado desde el cuerpo de la solicitud
+    const { estado } = req.body;
 
+    // Validar que el estado se haya proporcionado
     if (!estado) {
-        return res.status(400).send({ message: 'El estado es requerido' });
+        return res.status(400).send({ message: 'El estado es obligatorio' });
     }
 
-    try {
-        const pedido = await repository_4.updateEstado(idPedido, estado); // Solo se actualiza el estado
-        if (!pedido) {
-            return res.status(404).send({ message: 'Pedido No Encontrado' });
-        }
+    // Buscar el pedido
+    const pedido = await repository_4.findOne({ id: idPedido });
+    if (!pedido) {
+        return res.status(404).send({ message: 'Pedido no encontrado' });
+    }
 
-        return res.status(200).send({ message: 'Estado actualizado correctamente', data: pedido });
+    // Actualizar solo el estado
+    pedido.estado = String(estado);  // Asegurarse que el estado sea un string
+
+    try {
+        const updatedPedido = await repository_4.updateEstado(idPedido, pedido.estado); // Llamar a la función del repositorio para actualizar el estado
+        return res.status(200).send({ message: 'Estado del pedido actualizado correctamente', data: updatedPedido });
     } catch (error: any) {
         return res.status(400).send({ message: error.message });
     }
-}  
-export { sanitizePedidoInput, findAll, findOne, add, update, remove, updateEstado };
+}
+
+
+export { sanitizePedidoInput, findAll, findOne, add, update, remove, updateEstado};
