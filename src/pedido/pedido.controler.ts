@@ -4,6 +4,7 @@ import { Pedido } from "./pedido.entity.js";
 
 const repository_4 = new PedidoRepository();
 
+// Middleware para sanitizar los datos de entrada
 function sanitizePedidoInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedEnter = {
         idPedido: req.body.idPedido,
@@ -14,11 +15,13 @@ function sanitizePedidoInput(req: Request, res: Response, next: NextFunction) {
     next();
 }
 
+// Función para obtener todos los pedidos
 async function findAll(req: Request, res: Response) {
     const pedidos = await repository_4.findAll();
     res.json({ data: pedidos });
 }
 
+// Función para obtener un pedido por ID
 async function findOne(req: Request, res: Response) {
     const pedido = await repository_4.findOne({ id: req.params.idPedido });
     if (!pedido) {
@@ -28,6 +31,7 @@ async function findOne(req: Request, res: Response) {
     }
 }
 
+// Función para agregar un nuevo pedido
 async function add(req: Request, res: Response) {
     const enter = req.body.sanitizedEnter;
     const hamburguesas = req.body.hamburguesas;
@@ -47,6 +51,7 @@ async function add(req: Request, res: Response) {
     }
 }
 
+// Función para actualizar un pedido (tanto la modalidad como las hamburguesas)
 async function update(req: Request, res: Response) {
     req.body.sanitizedEnter.idPedido = req.params.idPedido;
     const hamburguesas = req.body.hamburguesas;
@@ -75,6 +80,7 @@ async function update(req: Request, res: Response) {
     }
 }
 
+// Función para eliminar un pedido
 async function remove(req: Request, res: Response) {
     const id = req.params.idPedido;
     const pedido = await repository_4.delete({ id });
@@ -85,4 +91,24 @@ async function remove(req: Request, res: Response) {
     }
 }
 
-export { sanitizePedidoInput, findAll, findOne, add, update, remove };
+// **Nueva función para actualizar el estado de un pedido**
+async function updateEstado(req: Request, res: Response) {
+    const idPedido = req.params.idPedido;
+    const { estado } = req.body; // Extraemos el estado desde el cuerpo de la solicitud
+
+    if (!estado) {
+        return res.status(400).send({ message: 'El estado es requerido' });
+    }
+
+    try {
+        const pedido = await repository_4.updateEstado(idPedido, estado); // Solo se actualiza el estado
+        if (!pedido) {
+            return res.status(404).send({ message: 'Pedido No Encontrado' });
+        }
+
+        return res.status(200).send({ message: 'Estado actualizado correctamente', data: pedido });
+    } catch (error: any) {
+        return res.status(400).send({ message: error.message });
+    }
+}  
+export { sanitizePedidoInput, findAll, findOne, add, update, remove, updateEstado };

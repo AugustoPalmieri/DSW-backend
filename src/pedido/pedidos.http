@@ -17,12 +17,12 @@ Content-Type: application/json
     "idCliente": 3,
     "hamburguesas": [
         {
-            "idHamburguesa": 2,
-            "cantidad": 3
+            "idHamburguesa": 3,
+            "cantidad": 1400
         },
         {
-            "idHamburguesa": 1,
-            "cantidad": 1
+            "idHamburguesa": 2,
+            "cantidad": 100
         }
     ]
 }
