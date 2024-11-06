@@ -87,20 +87,33 @@ export class PedidoRepository implements Repository<Pedido> {
     }
 
     public async add(pedidoInput: Pedido): Promise<Pedido | undefined> {
-        
         let montoTotal = 0;
         const hamburguesas = pedidoInput.hamburguesas || [];
-    
+
         for (const hamburguesa of hamburguesas) {
             const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
             if (precio) {
                 montoTotal += precio * hamburguesa.cantidad;
             }
         }
-    
-        const { idPedido, ...pedidoRow } = { ...pedidoInput, montoTotal };
-        const [result] = await pool.query<ResultSetHeader>('INSERT INTO pedidos SET ?', [pedidoRow]);
+
+        const pedidoRow = {
+            modalidad: pedidoInput.modalidad,
+            montoTotal,
+            estado: pedidoInput.estado,
+            idCliente: pedidoInput.idCliente
+        };
+
+        // Insertar en la tabla pedidos
+        const [result] = await pool.query<ResultSetHeader>('INSERT INTO pedidos SET ?', pedidoRow);
         pedidoInput.idPedido = result.insertId;
+
+        // Preparar datos para insertar en hamburguesas_pedidos
+        const hamburguesaPedidos = hamburguesas.map(h => [result.insertId, h.idHamburguesa, h.cantidad]);
+
+        // Inserción múltiple en hamburguesas_pedidos
+        const query = 'INSERT INTO hamburguesas_pedidos (idPedido, idHamburguesa, cantidad) VALUES ?';
+        await pool.query(query, [hamburguesaPedidos]);
         return pedidoInput;
     }
     
@@ -120,6 +133,11 @@ export class PedidoRepository implements Repository<Pedido> {
     
         const { idPedido, ...pedidoRow } = { ...pedidoInput, montoTotal };
         await pool.query('UPDATE pedidos SET ? WHERE idPedido = ?', [pedidoRow, pedidoId]);
+        await pool.query('DELETE FROM hamburguesas_pedidos WHERE idPedido = ?', [pedidoId]);
+        const hamburguesaPedidos = hamburguesas.map(h => [pedidoId, h.idHamburguesa, h.cantidad]);
+        await pool.query('INSERT INTO hamburguesas_pedidos (idPedido, idHamburguesa, cantidad) VALUES ?', [hamburguesaPedidos]);
+
+    
         return await this.findOne({ id });
     }
     

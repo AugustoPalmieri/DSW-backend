@@ -12,10 +12,19 @@ Content-Type: application/json
 
 {
     "modalidad": "COMER EN HAMBURGUESERIA",
-    "montoTotal": 5,
+    "montoTotal":100 ,
     "estado": "EN PROCESO",
-    "idCliente": 2
-    
+    "idCliente": 3,
+    "hamburguesas": [
+        {
+            "idHamburguesa": 2,
+            "cantidad": 3
+        },
+        {
+            "idHamburguesa": 1,
+            "cantidad": 1
+        }
+    ]
 }
 
 ### modificar un pedido
@@ -26,10 +35,21 @@ Content-Type: application/json
     "modalidad": "COMER EN HAMBURGUESERIA",
     "montoTotal": 5,
     "estado": "EN PROCESO",
-    "idCliente": 3
+    "idCliente": 3,
+    "hamburguesas": [
+        {
+            "idHamburguesa": 1,
+            "cantidad": 1
+        },
+        {
+            "idHamburguesa": 2,
+            "cantidad": 2
+        }
+    ]
 }
 
-### modificar un pedido con patch
+
+### modificar un pedido con PATCH
 PATCH http://localhost:3000/api/pedidos/4
 Content-Type: application/json
 
@@ -37,7 +57,13 @@ Content-Type: application/json
     "modalidad": "Queso",
     "montoTotal": 5,
     "estado": "EN PROCESO",
-    "idCliente": 2
+    "idCliente": 2,
+    "hamburguesas": [
+        {
+            "idHamburguesa": 1,
+            "cantidad": 2
+        }
+    ]
 }
 
 ### borrar un pedido

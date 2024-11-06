@@ -30,18 +30,17 @@ async function findOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
     const enter = req.body.sanitizedEnter;
-    const hamburguesas = req.body.hamburguesas; 
+    const hamburguesas = req.body.hamburguesas;
 
     if (!hamburguesas || hamburguesas.length === 0) {
         return res.status(400).send({ message: 'Debe incluir al menos una hamburguesa en el pedido' });
     }
 
-    
     const pedidoEnter = new Pedido(enter.modalidad, 0, enter.estado, enter.idCliente);
     pedidoEnter.hamburguesas = hamburguesas;
 
     try {
-        const pedido = await repository_4.add(pedidoEnter); // El montoTotal se calcula en el repositorio
+        const pedido = await repository_4.add(pedidoEnter);
         return res.status(201).send({ message: 'PEDIDO CREADO', data: pedido });
     } catch (error: any) {
         return res.status(400).send({ message: error.message });
@@ -50,16 +49,15 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
     req.body.sanitizedEnter.idPedido = req.params.idPedido;
-    const hamburguesas = req.body.hamburguesas; 
+    const hamburguesas = req.body.hamburguesas;
 
     if (!hamburguesas || hamburguesas.length === 0) {
         return res.status(400).send({ message: 'Debe incluir al menos una hamburguesa en el pedido' });
     }
 
-    
     const pedidoEnter = new Pedido(
         req.body.sanitizedEnter.modalidad,
-        0, 
+        0,
         req.body.sanitizedEnter.estado,
         req.body.sanitizedEnter.idCliente
     );
@@ -67,7 +65,7 @@ async function update(req: Request, res: Response) {
     pedidoEnter.hamburguesas = hamburguesas;
 
     try {
-        const pedido = await repository_4.update(req.params.idPedido, pedidoEnter); 
+        const pedido = await repository_4.update(req.params.idPedido, pedidoEnter);
         if (!pedido) {
             return res.status(404).send({ message: 'Pedido Not Found' });
         }
