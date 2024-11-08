@@ -43,15 +43,27 @@ async function update(req:Request,res:Response){
 }
 
 
-async function remove(req:Request,res:Response){
-    const id = req.params.codIngrediente
-    const ingrediente = await repository_3.delete({id})
-    if(!ingrediente){
-        res.status(404).send({message: 'Ingredientes Not Found'})
-    } else{
-        res.status(200).send({message: 'INGREDIENTE ELIMINADO CORRECTAMENTE'})
+async function remove(req: Request, res: Response) {
+    const codIngrediente = req.params.codIngrediente;
+
+    const hamburguesas = await repository_3.getHamburguesasByIngrediente(Number(codIngrediente));
+
+    if (hamburguesas.length > 0) {
+        res.status(400).send({
+            message: `DEBE ELIMINAR PRIMERO LA(S) HAMBURGUESA(S) QUE UTILIZA(N) EL INGREDIENTE`,
+            hamburguesas: hamburguesas
+        });
+    } else {
+        const ingrediente = await repository_3.delete({ id: codIngrediente });
+        if (!ingrediente) {
+            res.status(404).send({ message: 'Ingrediente no encontrado' });
+        } else {
+            res.status(200).send({ message: 'INGREDIENTE ELIMINADO CORRECTAMENTE' });
+        }
     }
-}   
+}
+
+
 
 export {sanitizeIngredienteInput, findAll, findOne, add, update, remove}
 
