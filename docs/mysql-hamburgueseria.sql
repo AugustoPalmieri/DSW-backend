@@ -109,9 +109,9 @@ INSERT INTO ingredientes (descripcion, stock) VALUES
 INSERT INTO pedidos (idCliente, modalidad, montoTotal) 
 VALUES  (1, 'TAKEAWAY', 10000),
         (1, 'DELIVERY', 25000),
-        (1, 'Domicilio', 12.50),
-        (2, 'Para llevar', 15.75),
-        (3, 'Domicilio', 10.00);
+        (1, 'TAKEAWAY', 12.50),
+        (2, 'TAKEAWAY', 15.75),
+        (3, 'DELIVERY', 10.00);
 
 INSERT INTO hamburguesas_pedidos (idPedido, idHamburguesa, cantidad) 
 VALUES

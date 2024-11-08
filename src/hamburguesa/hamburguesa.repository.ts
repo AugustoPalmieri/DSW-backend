@@ -38,7 +38,7 @@ export class HamburguesaRepository implements Repository<Hamburguesa>{
             SELECT p.estado
             FROM hamburguesas_pedidos hp
             INNER JOIN pedidos p ON hp.idPedido = p.idPedido
-            WHERE hp.idHamburguesa = ? AND p.estado = 'En proceso'
+            WHERE hp.idHamburguesa = ? AND p.estado = 'En proceso' 
         `;
         const [rows] = await pool.query<RowDataPacket[]>(query, [idHamburguesa]); 
     
@@ -53,18 +53,30 @@ export class HamburguesaRepository implements Repository<Hamburguesa>{
             }
     
             const hamburguesaId = Number.parseInt(item.id);
-            
+    
             
             const isInPedidoEnProceso = await this.isHamburguesaInPedidoEnProceso(hamburguesaId);
             if (isInPedidoEnProceso) {
                 throw new Error('HAMBURGUESA_EN_PEDIDO_EN_PROCESO');
             }
     
+            await pool.query('DELETE FROM hamburguesas_pedidos WHERE idHamburguesa = ?', [hamburguesaId]);
+    
+            
+            await pool.query('DELETE FROM precios WHERE idHamburguesa = ?', [hamburguesaId]);
+    
+            
+            await pool.query('DELETE FROM ingredientes_hamburguesa WHERE idHamburguesa = ?', [hamburguesaId]);
+    
             
             await pool.query('DELETE FROM hamburguesas WHERE idHamburguesa = ?', [hamburguesaId]);
+    
             return hamburguesaToDelete;
         } catch (error: any) {
-            throw new Error(error.message || 'unable to delete Hamburguesa');
+            if (error.message === 'HAMBURGUESA_EN_PEDIDO_EN_PROCESO') {
+                throw new Error('La hamburguesa no se puede eliminar porque está en un pedido en proceso');
+            }
+            throw new Error(error.message || 'Error al eliminar la hamburguesa');
         }
     }
 
