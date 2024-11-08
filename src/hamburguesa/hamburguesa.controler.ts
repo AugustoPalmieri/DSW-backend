@@ -44,15 +44,25 @@ async function update(req: Request,res:Response){
 
 }
 
-async function remove(req:Request,res: Response){
-    const id = req.params.idHamburguesa
-    const hamburguesa = await repository_2.delete({id})
-    if(!hamburguesa){
-        res.status(404).send({message: 'Hamburguesa Not Found'})
-    } else{
-        res.status(200).send({message: 'HAMBURGUESA ELIMINADA CORRECTAMENTE'})
-    }  
+async function remove(req: Request, res: Response) {
+    const idHamburguesa = req.params.idHamburguesa;
+
+    try {
+        const hamburguesa = await repository_2.delete({ id: idHamburguesa });
+        if (!hamburguesa) {
+            res.status(404).send({ message: 'Hamburguesa no encontrada' });
+        } else {
+            res.status(200).send({ message: 'HAMBURGUESA ELIMINADA CORRECTAMENTE' });
+        }
+    } catch (error: any) {
+        if (error.message === 'HAMBURGUESA_EN_PEDIDO_EN_PROCESO') {
+            res.status(400).send({ message: 'NO SE PUEDE ELIMINAR LA HAMBURGUESA PORQUE ESTÁ EN UN PEDIDO "EN PROCESO"' });
+        } else {
+            res.status(500).send({ message: 'Error al eliminar la hamburguesa' });
+        }
+    }
 }
+
 
 export{sanitizeHamburguesaInput, findAll, findOne, add,update, remove}
 

@@ -32,16 +32,40 @@ export class HamburguesaRepository implements Repository<Hamburguesa>{
         return await this.findOne({id})
  
     }
-    public async delete(item: { id: string; }): Promise<Hamburguesa | undefined>{
-        try{
-            const hamburguesaToDelete= await this.findOne(item)
-            const hamburguesaId= Number.parseInt(item.id)
-            await pool.query('delete from hamburguesas where idHamburguesa =?', hamburguesaId)
-            return hamburguesaToDelete
-        } catch(error: any) {
-            throw new Error('unable to delete Hamburguesa')
+    
+    public async isHamburguesaInPedidoEnProceso(idHamburguesa: number): Promise<boolean> {
+        const query = `
+            SELECT p.estado
+            FROM hamburguesas_pedidos hp
+            INNER JOIN pedidos p ON hp.idPedido = p.idPedido
+            WHERE hp.idHamburguesa = ? AND p.estado = 'En proceso'
+        `;
+        const [rows] = await pool.query<RowDataPacket[]>(query, [idHamburguesa]); 
+    
+        
+        return rows && rows.length > 0;
+    }
+    public async delete(item: { id: string }): Promise<Hamburguesa | undefined> {
+        try {
+            const hamburguesaToDelete = await this.findOne(item);
+            if (!hamburguesaToDelete) {
+                return undefined;
+            }
+    
+            const hamburguesaId = Number.parseInt(item.id);
+            
+            
+            const isInPedidoEnProceso = await this.isHamburguesaInPedidoEnProceso(hamburguesaId);
+            if (isInPedidoEnProceso) {
+                throw new Error('HAMBURGUESA_EN_PEDIDO_EN_PROCESO');
+            }
+    
+            
+            await pool.query('DELETE FROM hamburguesas WHERE idHamburguesa = ?', [hamburguesaId]);
+            return hamburguesaToDelete;
+        } catch (error: any) {
+            throw new Error(error.message || 'unable to delete Hamburguesa');
         }
-
     }
 
 }
