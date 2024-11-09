@@ -20,18 +20,44 @@ export class HamburguesaRepository implements Repository<Hamburguesa>{
         return hamburguesa
     }
     public async add(HamburguesaInput: Hamburguesa): Promise<Hamburguesa | undefined> {
-        const {idHamburguesa,...HamburguesaRow}=HamburguesaInput
-        const [result]=await pool.query<ResultSetHeader> ('insert into hamburguesas set ?', [HamburguesaRow])
-        HamburguesaInput.idHamburguesa=result.insertId
-        return HamburguesaInput
+        const { idHamburguesa, precio, ...HamburguesaRow } = HamburguesaInput;
+    
+        
+        const [result] = await pool.query<ResultSetHeader>('INSERT INTO hamburguesas SET ?', [HamburguesaRow]);
+        HamburguesaInput.idHamburguesa = result.insertId;
+    
+        
+        if (precio !== undefined) {
+            const fechaVigencia = new Date(); 
+            await pool.query(
+                'INSERT INTO precios (idHamburguesa, fechaVigencia, precio) VALUES (?, ?, ?)',
+                [HamburguesaInput.idHamburguesa, fechaVigencia, precio]
+            );
+        }
+    
+        return HamburguesaInput;
     }
-    public async update(id:string, hamburguesaInput:Hamburguesa): Promise<Hamburguesa | undefined> {
-        const hamburguesaId= Number.parseInt(id)
-        const {idHamburguesa, ...hamburguesaRow} = hamburguesaInput
-        await pool.query ('update hamburguesas set? where idHamburguesa =?', [hamburguesaRow, hamburguesaId])
-        return await this.findOne({id})
- 
+    
+    public async update(id: string, hamburguesaInput: Hamburguesa): Promise<Hamburguesa | undefined> {
+        const hamburguesaId = Number.parseInt(id);
+        const { precio, ...hamburguesaRow } = hamburguesaInput;
+        
+        
+        await pool.query('UPDATE hamburguesas SET ? WHERE idHamburguesa = ?', [hamburguesaRow, hamburguesaId]);
+        
+        
+        if (precio !== undefined) {
+            const fechaVigencia = new Date();
+            await pool.query(
+                'INSERT INTO precios (idHamburguesa, fechaVigencia, precio) VALUES (?, ?, ?)',
+                [hamburguesaId, fechaVigencia, precio]
+            );
+        }
+    
+        
+        return await this.findOne({ id });
     }
+    
     
     public async isHamburguesaInPedidoEnProceso(idHamburguesa: number): Promise<boolean> {
         const query = `

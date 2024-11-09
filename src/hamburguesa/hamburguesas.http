@@ -10,16 +10,20 @@ Content-Type: application/json
 
 {
     "nombre": "TRIPLE QUESO",
-    "descripcion": "MUCHO QUESO"
+    "descripcion": "MUCHO QUESO",
+    "precio": 1000
 }
+
 ### modificar una hamburguesa
 PUT http://localhost:3000/api/hamburguesas/12
 Content-Type: application/json
 
 {
     "nombre": "ROUTE 66",
-    "descripcion": "HAMBUR HAMBUR"
+    "descripcion": "HAMBUR HAMBUR",
+    "precio": 1200
 }
+
 
 ### modificar una hamburguesa con patch
 PATCH http://localhost:3000/api/hamburguesas/11
@@ -27,8 +31,9 @@ Content-Type: application/json
 
 {
     "nombre": "ROUTE 66",
-    "descripcion": "HAMBUR HAMBUR"
+    "descripcion": "HAMBUR HAMBUR",
+    "precio": 1200
 }
 
 ### borrar una hamburguesa
-DELETE http://localhost:3000/api/hamburguesas/12
+DELETE http://localhost:3000/api/hamburguesas/19

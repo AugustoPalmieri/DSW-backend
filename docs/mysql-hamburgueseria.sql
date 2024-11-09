@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS precios (
     idHamburguesa INT UNSIGNED NOT NULL,
     fechaVigencia DATE NOT NULL,   
     precio DECIMAL(10, 2) NULL,
-    PRIMARY KEY (fechaVigencia),
+    PRIMARY KEY (idHamburguesa, fechaVigencia),
     FOREIGN KEY (idHamburguesa) REFERENCES hamburguesas(idHamburguesa)
         ON DELETE CASCADE
         ON UPDATE CASCADE
