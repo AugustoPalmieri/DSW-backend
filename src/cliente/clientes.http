@@ -41,3 +41,6 @@ Content-Type: application/json
     }
 ### borrar un cliente
 DELETE http://localhost:3000/api/clientes/3
+
+### buscar un cliente por email
+GET http://localhost:3000/api/clientes/email/augusto@gmail.com

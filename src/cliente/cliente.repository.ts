@@ -43,4 +43,12 @@ export class ClienteRepository implements Repository<Cliente>{
             throw new Error('unable to delete Cliente')
         }
     }
+    public async findByEmail(email: string): Promise<Cliente | undefined> {
+        const [clientes] = await pool.query<RowDataPacket[]>('SELECT * FROM clientes WHERE email = ?', [email]);
+        if (clientes.length === 0) {
+            return undefined;
+        }
+        const cliente = clientes[0] as Cliente;
+        return cliente;
+    }
 }   

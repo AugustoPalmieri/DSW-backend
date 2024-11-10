@@ -54,5 +54,14 @@ async function remove(req: Request,res: Response){
         res.status(200).send({message: 'CLIENTE ELIMINADO CORRECTAMENTE'})
     } 
 }
+async function findByEmail(req: Request, res: Response) {
+        const email = req.params.email;
+        const cliente = await repository.findByEmail(email);
+        if (!cliente) {
+            return res.status(404).send({ message: 'Cliente Not Found' });
+        }
+        res.json(cliente);
+    }
 
-export{sanitizeClienteInput, findAll, findOne,add, update, remove}
+
+export{sanitizeClienteInput, findAll, findOne,add, update, remove,findByEmail};
