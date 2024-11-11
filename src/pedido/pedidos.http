@@ -3,7 +3,7 @@ GET http://localhost:3000/api/pedidos
 
 
 ### obtener un unico pedido
-GET http://localhost:3000/api/pedidos/2
+GET http://localhost:3000/api/pedidos/26
 
 
 ### crear un pedido
@@ -11,10 +11,10 @@ POST http://localhost:3000/api/pedidos
 Content-Type: application/json
 
 {
-    "modalidad": "COMER EN HAMBURGUESERIA",
+    "modalidad": "delivery",
     "montoTotal":100 ,
     "estado": "EN PROCESO",
-    "idCliente": 3,
+    "idCliente": 13,
     "hamburguesas": [
         {
             "idHamburguesa": 3,
@@ -28,25 +28,25 @@ Content-Type: application/json
 }
 
 ### modificar un pedido
-PUT http://localhost:3000/api/pedidos/2
+PUT http://localhost:3000/api/pedidos/26
 Content-Type: application/json
 
-{
-    "modalidad": "COMER EN HAMBURGUESERIA",
-    "montoTotal": 5,
+{   
+    "modalidad": "delivery",
+    "montoTotal": 100,
     "estado": "EN PROCESO",
-    "idCliente": 3,
+    "idCliente": 13,
     "hamburguesas": [
-        {
-            "idHamburguesa": 1,
-            "cantidad": 1
-        },
-        {
-            "idHamburguesa": 2,
-            "cantidad": 2
-        }
+      {
+        "idHamburguesa": 3,
+        "cantidad": 1400
+      },
+      {
+        "idHamburguesa": 2,
+        "cantidad": 100
+      }
     ]
-}
+  }
 
 
 ### modificar un pedido con PATCH
@@ -61,6 +61,7 @@ Content-Type: application/json
     "hamburguesas": [
         {
             "idHamburguesa": 1,
+            "nombre": "Cheeseburger",
             "cantidad": 2
         }
     ]

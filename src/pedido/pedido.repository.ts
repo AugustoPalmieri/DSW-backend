@@ -7,6 +7,9 @@ import { PrecioRepository } from "../precio/precio.repository.js";
 const precioRepository = new PrecioRepository();
 
 export class PedidoRepository implements Repository<Pedido> {
+    static update(idPedido: string, pedidoEnter: Pedido) {
+        throw new Error("Method not implemented.");
+    }
     public async findAll(): Promise<Pedido[] | undefined> {
         const [pedidos] = await pool.query<RowDataPacket[]>(`
             SELECT ped.*, 
@@ -119,9 +122,16 @@ export class PedidoRepository implements Repository<Pedido> {
     public async update(id: string, pedidoInput: Pedido): Promise<Pedido | undefined> {
         const pedidoId = Number.parseInt(id);
     
-        
+        if (isNaN(pedidoId)) {
+            throw new Error('ID del pedido no es válido');
+        }
+    
         let montoTotal = 0;
-        const hamburguesas = pedidoInput.hamburguesas || []; 
+        const hamburguesas = pedidoInput.hamburguesas || [];
+    
+        if (!hamburguesas || hamburguesas.length === 0) {
+            throw new Error('No se pueden actualizar pedidos sin hamburguesas');
+        }
     
         for (const hamburguesa of hamburguesas) {
             const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
@@ -130,16 +140,46 @@ export class PedidoRepository implements Repository<Pedido> {
             }
         }
     
-        const { idPedido, ...pedidoRow } = { ...pedidoInput, montoTotal };
-        await pool.query('UPDATE pedidos SET ? WHERE idPedido = ?', [pedidoRow, pedidoId]);
-        await pool.query('DELETE FROM hamburguesas_pedidos WHERE idPedido = ?', [pedidoId]);
-        const hamburguesaPedidos = hamburguesas.map(h => [pedidoId, h.idHamburguesa, h.cantidad]);
-        await pool.query('INSERT INTO hamburguesas_pedidos (idPedido, idHamburguesa, cantidad) VALUES ?', [hamburguesaPedidos]);
-
+        // Asegurarse de solo pasar los datos necesarios a la consulta
+        const pedidoRow = {
+            modalidad: pedidoInput.modalidad,
+            montoTotal,
+            estado: pedidoInput.estado,
+            idCliente: pedidoInput.idCliente  // Asegúrate de incluir cualquier campo necesario
+        };
     
-        return await this.findOne({ id });
+        // Depuración: Verifica el contenido de pedidoRow
+        
+    
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+    
+            // Aquí se pasa solo el objeto 'pedidoRow', asegurándonos de que no sea un objeto complejo
+            const [result] = await connection.query('UPDATE pedidos SET ? WHERE idPedido = ?', [pedidoRow, pedidoId]);
+    
+            if ((result as any).affectedRows === 0) {
+                throw new Error('No se encontró el pedido para actualizar');
+            }
+    
+            // Borra las hamburguesas anteriores y las vuelve a insertar
+            await connection.query('DELETE FROM hamburguesas_pedidos WHERE idPedido = ?', [pedidoId]);
+    
+            const hamburguesaPedidos = hamburguesas.map(h => [pedidoId, h.idHamburguesa, h.cantidad]);
+            if (hamburguesaPedidos.length > 0) {
+                await connection.query('INSERT INTO hamburguesas_pedidos (idPedido, idHamburguesa, cantidad) VALUES ?', [hamburguesaPedidos]);
+            }
+    
+            await connection.commit();
+            connection.release();
+    
+            return await this.findOne({ id });
+        } catch (error: any) {
+            await connection.rollback();
+            connection.release();
+            throw new Error(`Error al actualizar el pedido: ${error.message}`);
+        }
     }
-    
 
     public async delete(item: { id: string }): Promise<Pedido | undefined> {
         try {

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { PedidoRepository } from "./pedido.repository.js";
 import { Pedido } from "./pedido.entity.js";
 
+
 const repository_4 = new PedidoRepository();
 
 
@@ -11,6 +12,7 @@ function sanitizePedidoInput(req: Request, res: Response, next: NextFunction) {
         modalidad: req.body.modalidad,
         estado: req.body.estado,
         idCliente: req.body.idCliente,
+        hamburguesas: req.body.hamburguesas,
     };
     next();
 }
@@ -51,35 +53,45 @@ async function add(req: Request, res: Response) {
     }
 }
 
-
 async function update(req: Request, res: Response) {
+    // Asegúrate de que el ID del pedido esté correctamente asignado
     req.body.sanitizedEnter.idPedido = req.params.idPedido;
+
     const hamburguesas = req.body.hamburguesas;
 
+    // Verifica si hay al menos una hamburguesa en el pedido
     if (!hamburguesas || hamburguesas.length === 0) {
         return res.status(400).send({ message: 'Debe incluir al menos una hamburguesa en el pedido' });
     }
 
+    // Crea una instancia de Pedido con los datos sanitizados
     const pedidoEnter = new Pedido(
         req.body.sanitizedEnter.modalidad,
-        0,
+        0,  // El montoTotal se calculará más adelante
         req.body.sanitizedEnter.estado,
         req.body.sanitizedEnter.idCliente
     );
+
+    // Asigna el ID del pedido y las hamburguesas al objeto pedido
     pedidoEnter.idPedido = parseInt(req.params.idPedido, 10);
     pedidoEnter.hamburguesas = hamburguesas;
 
     try {
+        // Llama al método update del repositorio para actualizar el pedido
         const pedido = await repository_4.update(req.params.idPedido, pedidoEnter);
+        
+        // Verifica si el pedido fue encontrado y actualizado
         if (!pedido) {
             return res.status(404).send({ message: 'Pedido Not Found' });
         }
+
+        // Envía una respuesta exitosa con el pedido actualizado
         return res.status(200).send({ message: 'PEDIDO MODIFICADO CORRECTAMENTE', data: pedido });
     } catch (error: any) {
+        // Maneja cualquier error ocurrido durante el proceso de actualización
         return res.status(400).send({ message: error.message });
     }
 }
-
 
 async function remove(req: Request, res: Response) {
     const id = req.params.idPedido;
