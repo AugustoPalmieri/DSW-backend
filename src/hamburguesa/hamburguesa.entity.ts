@@ -2,7 +2,8 @@ export class Hamburguesa {
     constructor(
         public nombre: string,
         public descripcion: string,
-        public precio?: number, 
+        public precio?: number,
+        public imagen?: string, // Nueva propiedad
         public idHamburguesa?: number
     ) {}
 }

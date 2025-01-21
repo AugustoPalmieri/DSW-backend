@@ -28,17 +28,17 @@ Content-Type: application/json
 }
 
 ### modificar un pedido
-PUT http://localhost:3000/api/pedidos/26
+PUT http://localhost:3000/api/pedidos/33
 Content-Type: application/json
 
 {   
     "modalidad": "delivery",
     "montoTotal": 100,
-    "estado": "EN PROCESO",
-    "idCliente": 13,
+    "estado": "pendiente",
+    "idCliente": 20,
     "hamburguesas": [
       {
-        "idHamburguesa": 3,
+        "idHamburguesa": 14,
         "cantidad": 1400
       },
       {

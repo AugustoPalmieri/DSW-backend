@@ -2,16 +2,17 @@
 GET http://localhost:3000/api/hamburguesas
 
 ### obtener una unica hamburguesa
-GET http://localhost:3000/api/hamburguesas/2
+GET http://localhost:3000/api/hamburguesas/17
 
 ### crear una hamburguesa
 POST http://localhost:3000/api/hamburguesas
 Content-Type: application/json
 
 {
-    "nombre": "TRIPLE QUESO",
-    "descripcion": "MUCHO QUESO",
-    "precio": 1000
+    "nombre": "hamburguesa especial",
+    "descripcion": "tomate lechuga y queso",
+    "precio": 5000,
+    "imagen":"1737466504456-hamburguesaespecial.jpeg"
 }
 
 ### modificar una hamburguesa
@@ -21,7 +22,8 @@ Content-Type: application/json
 {
     "nombre": "ROUTE 66",
     "descripcion": "HAMBUR HAMBUR",
-    "precio": 1200
+    "precio": 1200,
+    "imagen":"1737466504456-hamburguesaespecial.jpeg"
 }
 
 
@@ -32,7 +34,8 @@ Content-Type: application/json
 {
     "nombre": "ROUTE 66",
     "descripcion": "HAMBUR HAMBUR",
-    "precio": 1200
+    "precio": 1200,
+    "imagen":"1737466504456-hamburguesaespecial.jpeg"
 }
 
 ### borrar una hamburguesa
