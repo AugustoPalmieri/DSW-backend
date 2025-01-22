@@ -139,30 +139,21 @@ export class PedidoRepository implements Repository<Pedido> {
                 montoTotal += precio * hamburguesa.cantidad;
             }
         }
-    
-        // Asegurarse de solo pasar los datos necesarios a la consulta
-        const pedidoRow = {
+            const pedidoRow = {
             modalidad: pedidoInput.modalidad,
             montoTotal,
             estado: pedidoInput.estado,
-            idCliente: pedidoInput.idCliente  // Asegúrate de incluir cualquier campo necesario
+            idCliente: pedidoInput.idCliente
         };
-    
-        // Depuración: Verifica el contenido de pedidoRow
-        
-    
+
         const connection = await pool.getConnection();
         try {
             await connection.beginTransaction();
-    
-            // Aquí se pasa solo el objeto 'pedidoRow', asegurándonos de que no sea un objeto complejo
             const [result] = await connection.query('UPDATE pedidos SET ? WHERE idPedido = ?', [pedidoRow, pedidoId]);
     
             if ((result as any).affectedRows === 0) {
                 throw new Error('No se encontró el pedido para actualizar');
             }
-    
-            // Borra las hamburguesas anteriores y las vuelve a insertar
             await connection.query('DELETE FROM hamburguesas_pedidos WHERE idPedido = ?', [pedidoId]);
     
             const hamburguesaPedidos = hamburguesas.map(h => [pedidoId, h.idHamburguesa, h.cantidad]);
@@ -210,12 +201,15 @@ export class PedidoRepository implements Repository<Pedido> {
                 [estado, idPedido]
             );
     
-            // Verificar si se actualizó correctamente
-    
-            return { idPedido, estado };  // Devolver el estado actualizado
+            return { idPedido, estado };  
         } catch (error: any) {
-            throw new Error(error.message);  // Manejo de errores
+            throw new Error(error.message);  
         }
+    }
+    public async getClienteById(idCliente: number): Promise<any | undefined> {
+        const [clientes] = await pool.query<RowDataPacket[]>('SELECT * FROM clientes WHERE idCliente = ?', [idCliente]);
+        if (clientes.length === 0) return undefined;
+        return clientes[0];
     }
     }
 

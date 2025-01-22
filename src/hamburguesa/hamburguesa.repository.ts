@@ -82,5 +82,16 @@ public async delete(item: { id: string }): Promise<Hamburguesa | undefined> {
             throw new Error(error.message || 'Error al eliminar la hamburguesa');
         }
     }
-
+    public async getPrecioById(idHamburguesa: number): Promise<number | undefined> {
+        const [precios] = await pool.query<RowDataPacket[]>(
+            "SELECT precio FROM precios WHERE idHamburguesa = ? ORDER BY fechaVigencia DESC LIMIT 1",
+            [idHamburguesa]
+        );
+    
+        if (precios.length === 0) {
+            return undefined; // No se encontró precio
+        }
+    
+        return precios[0].precio; // Devuelve el precio más reciente
+    }
 }
