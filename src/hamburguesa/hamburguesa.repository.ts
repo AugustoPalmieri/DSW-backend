@@ -46,23 +46,27 @@ export class HamburguesaRepository implements Repository<Hamburguesa> {
     public async update(id: string, hamburguesaInput: Hamburguesa): Promise<Hamburguesa | undefined> {
         const hamburguesaId = Number.parseInt(id);
         const { precio, ...hamburguesaRow } = hamburguesaInput;
-
+    
+        // Actualizar datos de la hamburguesa
         await pool.query("UPDATE hamburguesas SET ? WHERE idHamburguesa = ?", [
             hamburguesaRow,
             hamburguesaId,
         ]);
-
+    
         if (precio !== undefined) {
             const fechaVigencia = new Date();
+    
+            // Insertar o actualizar precio en la tabla `precios`
             await pool.query(
-                "INSERT INTO precios (idHamburguesa, fechaVigencia, precio) VALUES (?, ?, ?)",
+                `INSERT INTO precios (idHamburguesa, fechaVigencia, precio) 
+                 VALUES (?, ?, ?)
+                 ON DUPLICATE KEY UPDATE precio = VALUES(precio)`,
                 [hamburguesaId, fechaVigencia, precio]
             );
         }
-
+    
         return await this.findOne({ id });
     }
-
 
 public async delete(item: { id: string }): Promise<Hamburguesa | undefined> {
         try {

@@ -58,7 +58,7 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
     req.body.sanitizedInput.idHamburguesa = req.params.idHamburguesa;
-    req.body.sanitizedInput["imagen"] = req.file?.filename || req.body.imagen; // Mantener la imagen existente si no hay nueva
+    req.body.sanitizedInput["imagen"] = req.file?.filename;
     const hamburguesa = await repository_2.update(req.params.idHamburguesa, req.body.sanitizedInput);
 
     if (!hamburguesa) {
