@@ -47,7 +47,6 @@ async function add(req: Request, res: Response) {
 
     try {
         const pedido = await repository_4.add(pedidoEnter);
-        // Enviar el correo de confirmación
         if (pedido) {
             await sendConfirmationEmail(pedido);
         } else {
