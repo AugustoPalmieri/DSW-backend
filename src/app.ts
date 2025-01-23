@@ -8,6 +8,7 @@ import { hamburguesaRouter } from './hamburguesa/hamburguesa.routes.js';
 import { ingredienteRouter } from './ingrediente/ingrediente.routes.js';
 import { pedidoRouter } from './pedido/pedido.routes.js';
 import precioRouter from './precio/precio.routes.js';
+import contactoRoutes from './contacto/contacto.routes.js'
 
 const app = express();
 
@@ -32,7 +33,7 @@ app.use('/api/hamburguesas', hamburguesaRouter);
 app.use('/api/ingredientes', ingredienteRouter);
 app.use('/api/pedidos', pedidoRouter);
 app.use('/api/precios', precioRouter);
-
+app.use('/contacto', contactoRoutes);
 // Manejo de errores 404
 app.use((_, res) => {
   return res.status(404).send({ message: 'Resource Not Found' });

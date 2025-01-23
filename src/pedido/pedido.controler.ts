@@ -182,7 +182,11 @@ async function sendConfirmationEmail(pedido: Pedido) {
                         <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">$${total.toFixed(2)}</td>
                     </tr>
                 </table>
-                <p style="margin-top: 20px; font-size: 16px;">Gracias por tu compra. Te esperamos pronto en nuestra hamburguesería :).</p>            `
+                <p style="margin-top: 20px; font-size: 16px;">Gracias por tu compra. Te esperamos pronto en nuestra hamburguesería :).</p> 
+                <p style="margin-top: 20px; font-size: 16px;">Dirección: Zeballos 1341 </p>  
+                <p style="margin-top: 20px; font-size: 16px;">Mail de contacto: <strong>hamburgueseriautn@gmail.com</strong> </p>            `
+               
+                
         };
 
     
