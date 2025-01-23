@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
-import path from 'path'; // Importa el módulo path
-
+import path from 'path';
+import dotenv from 'dotenv';
 import { clienteRouter } from './cliente/cliente.routes.js';
 import { hamburguesaRouter } from './hamburguesa/hamburguesa.routes.js';
 import { ingredienteRouter } from './ingrediente/ingrediente.routes.js';
@@ -11,8 +11,7 @@ import precioRouter from './precio/precio.routes.js';
 import contactoRoutes from './contacto/contacto.routes.js'
 
 const app = express();
-
-// Obtiene la ruta del directorio actual
+dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Habilita la carga de archivos JSON

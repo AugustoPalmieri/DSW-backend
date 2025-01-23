@@ -6,6 +6,7 @@ export class Cliente{
         public telefono:string,
         public email: string,
         public direccion:string,
+        public passwordHash: string,
         public idCliente?: number
     ){}
 }
