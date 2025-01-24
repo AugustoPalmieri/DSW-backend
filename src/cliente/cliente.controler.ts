@@ -12,7 +12,8 @@ function sanitizeClienteInput(req: Request, res: Response, next:NextFunction){
         apellido: req.body.apellido,
         telefono: req.body.telefono,
         email: req.body.email,
-        direccion: req.body.direccion
+        direccion: req.body.direccion,
+        passwordHash:req.body.passwordHash
     }
     next()
 }
@@ -29,12 +30,42 @@ async function findOne(req:Request,res: Response){
     res.json(cliente)
 }
 
-async function add(req: Request, res: Response){
-    const data= req.body.sanitizedData
-    const clienteData = new Cliente(data.nombre, data.apellido,data.telefono, data.email,data.direccion,data.passwordHash)
-    const cliente = await repository.add(clienteData)
-    return res.status(201).send({message: 'CLIENTE CREADO', data: cliente})
-}  
+async function add(req: Request, res: Response) {
+    const { nombre, apellido, telefono, email, direccion, password } = req.body;
+
+    // Verificar que todos los campos estén presentes
+    if (!nombre || !apellido || !email || !password) {
+        return res.status(400).json({ error: "Todos los campos son obligatorios" });
+    }
+
+    // Verificar si el email ya está registrado
+    const clienteExistente = await repository.findByEmail(email);
+    if (clienteExistente) {
+        return res.status(400).json({ error: "El email ya está registrado" });
+    }
+
+    // Hashear la contraseña
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Crear nuevo cliente con el password hasheado
+    const nuevoCliente = new Cliente(
+        nombre,
+        apellido,
+        telefono,
+        email,
+        direccion,
+        hashedPassword
+    );
+
+    // Guardar el cliente en la base de datos
+    try {
+        const clienteCreado = await repository.add(nuevoCliente);
+        return res.status(201).json({ message: "Usuario registrado exitosamente", data: clienteCreado });
+    } catch (error) {
+        return res.status(500).json({ error: "Error al crear el cliente" });
+    }
+}
 
 
 async function update(req: Request, res: Response){ 
@@ -65,36 +96,6 @@ async function findByEmail(req: Request, res: Response) {
         res.json(cliente);
     }
 
-    async function register(req: Request, res: Response) {
-        const { nombre, apellido, telefono, email, direccion, password } = req.body;
-    
-        if (!nombre || !apellido || !email || !password) {
-            return res.status(400).json({ error: "Todos los campos son obligatorios" });
-        }
-    
-        // Verificar si el email ya está registrado
-        const clienteExistente = await repository.findByEmail(email);
-        if (clienteExistente) {
-            return res.status(400).json({ error: "El email ya está registrado" });
-        }
-    
-        // Hashear la contraseña
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-    
-        // Crear nuevo cliente
-        const nuevoCliente = new Cliente(
-            nombre,
-            apellido,
-            telefono,
-            email,
-            direccion,
-            hashedPassword
-        );
-    
-        const clienteCreado = await repository.add(nuevoCliente);
-        res.status(201).json({ message: "Usuario registrado exitosamente", data: clienteCreado });
-    }
     
     async function login(req: Request, res: Response) {
         const { email, password } = req.body;
@@ -126,4 +127,4 @@ async function findByEmail(req: Request, res: Response) {
     
         res.status(200).json({ token, message: "Inicio de sesión exitoso" });
     }
-export{sanitizeClienteInput, findAll, findOne,add, update, remove,findByEmail,register,login};
+export{sanitizeClienteInput, findAll, findOne,add, update, remove,findByEmail,login};
