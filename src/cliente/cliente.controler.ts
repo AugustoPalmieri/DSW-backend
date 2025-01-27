@@ -13,7 +13,8 @@ function sanitizeClienteInput(req: Request, res: Response, next:NextFunction){
         telefono: req.body.telefono,
         email: req.body.email,
         direccion: req.body.direccion,
-        passwordHash:req.body.passwordHash
+        password:req.body.password,
+        passwordHash:req.body.passwordHash||undefined,
     }
     next()
 }
@@ -32,23 +33,16 @@ async function findOne(req:Request,res: Response){
 
 async function add(req: Request, res: Response) {
     const { nombre, apellido, telefono, email, direccion, password } = req.body;
-
-    // Verificar que todos los campos estén presentes
     if (!nombre || !apellido || !email || !password) {
         return res.status(400).json({ error: "Todos los campos son obligatorios" });
     }
-
-    // Verificar si el email ya está registrado
     const clienteExistente = await repository.findByEmail(email);
     if (clienteExistente) {
         return res.status(400).json({ error: "El email ya está registrado" });
     }
-
-    // Hashear la contraseña
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Crear nuevo cliente con el password hasheado
     const nuevoCliente = new Cliente(
         nombre,
         apellido,
@@ -57,8 +51,6 @@ async function add(req: Request, res: Response) {
         direccion,
         hashedPassword
     );
-
-    // Guardar el cliente en la base de datos
     try {
         const clienteCreado = await repository.add(nuevoCliente);
         return res.status(201).json({ message: "Usuario registrado exitosamente", data: clienteCreado });
@@ -68,18 +60,39 @@ async function add(req: Request, res: Response) {
 }
 
 
-async function update(req: Request, res: Response){ 
-    req.body.sanitizedData.idCliente = req.params.idCliente
-    const cliente = await repository.update(req.params.idCliente, req.body.sanitizedData) ///puede ser id
-    if(!cliente){
-        return res.status(404).send({message: 'Cliente Not Found'})
+async function update(req: Request, res: Response) {
+    const idCliente = req.params.idCliente;
+    const sanitizedData = req.body.sanitizedData || req.body;
+
+    // Si incluye "password", genera el hash y actualiza "passwordHash"
+    if (sanitizedData.password) {
+        const salt = await bcrypt.genSalt(10);
+        sanitizedData.passwordHash = await bcrypt.hash(sanitizedData.password, salt);
+        delete sanitizedData.password; // No almacenar la contraseña en texto plano
     }
-    return res.status(200).send({message: 'CLIENTE MODIFICADO CORRECTAMENTE', data:cliente})
+
+    try {
+        const cliente = await repository.update(idCliente, sanitizedData);
+
+        if (!cliente) {
+            return res.status(404).send({ message: 'Cliente Not Found' });
+        }
+
+        return res.status(200).send({ 
+            message: 'CLIENTE MODIFICADO CORRECTAMENTE', 
+            data: cliente 
+        });
+    } catch (error) {
+        console.error('Error al actualizar el cliente:', error);
+        return res.status(500).send({ error: 'Error al actualizar el cliente' });
+    }
 }
 
 
+
+
 async function remove(req: Request,res: Response){
-    const id = req.params.idCliente //puede ser id
+    const id = req.params.idCliente 
     const cliente =await repository.delete({id})
     if(!cliente){
         res.status(404).send({message: 'Cliente Not Found'})
@@ -104,27 +117,44 @@ async function findByEmail(req: Request, res: Response) {
             return res.status(400).json({ error: "Todos los campos son obligatorios" });
         }
     
-        // Verificar si el usuario existe
-        const cliente = await repository.findByEmail(email);
-        if (!cliente) {
-            return res.status(400).json({ error: "Credenciales inválidas" });
-        }
+        try {
+            const cliente = await repository.findByEmail(email);
+            if (!cliente) {
+                return res.status(400).json({ error: "Credenciales inválidas" });
+            }
     
-        // Verificar contraseña
-        const isMatch = await bcrypt.compare(password, cliente.passwordHash);
-        if (!isMatch) {
-            return res.status(400).json({ error: "Credenciales inválidas" });
-        }
-        console.log(process.env.JWT_SECRET)
-        if (!process.env.JWT_SECRET) {
-            return res.status(500).json({ error: "La clave secreta no está definida en el entorno" });
-        }
-         const token = jwt.sign(
-            { idCliente: cliente.idCliente, email: cliente.email },
-            process.env.JWT_SECRET,  // Usar la clave secreta del entorno
-            { expiresIn: "1h" }
-        );
+            // Comparar la contraseña ingresada con el passwordHash en la base de datos
+            const isMatch = await bcrypt.compare(password, cliente.passwordHash);
+            if (!isMatch) {
+                return res.status(400).json({ error: "Credenciales inválidas" });
+            }
     
-        res.status(200).json({ token, message: "Inicio de sesión exitoso" });
+            if (!process.env.JWT_SECRET) {
+                return res.status(500).json({ error: "La clave secreta no está definida en el entorno" });
+            }
+    
+            // Generación del token
+            const token = jwt.sign(
+                { idCliente: cliente.idCliente, email: cliente.email },
+                process.env.JWT_SECRET,
+                { expiresIn: "1h" }
+            );
+    
+            // Devolver el token y el idCliente en la respuesta
+            res.status(200).json({
+                token,
+                cliente: {
+                    idCliente: cliente.idCliente, // Agregar idCliente en la respuesta
+                    email: cliente.email          // Puedes agregar otros datos si lo deseas
+                },
+                message: "Inicio de sesión exitoso"
+            });
+        } catch (error) {
+            console.error("Error al intentar iniciar sesión:", error);
+            res.status(500).json({ error: "Error interno del servidor" });
+        }
     }
+    
+    
+    
 export{sanitizeClienteInput, findAll, findOne,add, update, remove,findByEmail,login};
