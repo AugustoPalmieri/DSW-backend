@@ -1,22 +1,10 @@
 import { Request, Response } from 'express';
-import nodemailer from 'nodemailer';
-
+import transporter from '../mailService.js'
 // Controlador para manejar el envío del formulario
 export const enviarFormulario = async (req: Request, res: Response) => {
   const { firstName, lastName, phone, email, message } = req.body;
 
-  try {
-    // Configuración del transporte de correo
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // Cambiar a true si usas puerto 465
-      auth: {
-        user: 'hamburgueseriautn@gmail.com',
-        pass: 'bfqm szfa orru xghw',
-      },
-    });
-
+  try{
     const mailOptions = {
       from: `"Formulario de Contacto" <hamburgueseriautn@gmail.com>`,
       to: 'hamburgueseriautn@gmail.com',
