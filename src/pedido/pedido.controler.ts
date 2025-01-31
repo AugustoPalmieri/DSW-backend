@@ -1,17 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { PedidoRepository } from "./pedido.repository.js";
 import { Pedido } from "./pedido.entity.js";
-import nodemailer from 'nodemailer';
+import transporter from "../mailService.js";
 import { HamburguesaRepository } from "../hamburguesa/hamburguesa.repository.js";
 const repository_4 = new PedidoRepository();
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'hamburgueseriautn@gmail.com', 
-        pass: 'bfqm szfa orru xghw' 
-    }
-});
 function sanitizePedidoInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedEnter = {
         idPedido: req.body.idPedido,
