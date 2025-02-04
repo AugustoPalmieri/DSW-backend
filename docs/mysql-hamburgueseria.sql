@@ -1,11 +1,9 @@
 create database if not exists hamburgueseria;
 
-
 use hamburgueseria;
 
 create user if not exists dsw@'%' identified by 'dsw';
 GRANT SELECT, UPDATE, INSERT, DELETE ON hamburgueseria.* TO 'dsw'@'%'; 
-
 
 CREATE TABLE IF NOT EXISTS clientes (
     idCliente INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -14,9 +12,16 @@ CREATE TABLE IF NOT EXISTS clientes (
     telefono VARCHAR(20) NULL, 
     email VARCHAR(60)  NULL,
     direccion VARCHAR(60) NULL,
+    passwordHash VARCHAR(255) NOT NULL,  
     PRIMARY KEY (idCliente)
 );
 
+CREATE TABLE IF NOT EXISTS administradores (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    email VARCHAR(255) NULL,
+    codigo VARCHAR(6) NULL,
+    PRIMARY KEY (id)
+);
 
 CREATE TABLE IF NOT EXISTS pedidos (
     idPedido INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -31,11 +36,11 @@ CREATE TABLE IF NOT EXISTS pedidos (
         ON UPDATE CASCADE
 );
 
-
 CREATE TABLE IF NOT EXISTS hamburguesas (
     idHamburguesa INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre VARCHAR (100) NULL,
     descripcion VARCHAR(250) NULL,
+    imagen VARCHAR(255) NULL,  
     PRIMARY KEY(idHamburguesa)
 );
 
@@ -83,18 +88,16 @@ CREATE TABLE IF NOT EXISTS precios (
 );
 
 
+INSERT INTO clientes (nombre, apellido, telefono, email, passwordHash) 
+VALUES ('IÑAKI', 'DIAZ', '123-4567', 'iniadiaz@gmail.com', '$2a$10$defaultPlaceholderHash...'),
+('Juan', 'Pérez', '555-1234', 'juan.perez@example.com', '$2a$10$defaultPlaceholderHash...'),
+('María', 'González', '555-5678', 'maria.gonzalez@example.com', '$2a$10$defaultPlaceholderHash...'),
+('Carlos', 'Ramírez', '555-8765', 'carlos.ramirez@example.com', '$2a$10$defaultPlaceholderHash...');
 
-
-INSERT INTO clientes (nombre, apellido, telefono, email) 
-VALUES ('IÑAKI', 'DIAZ', '123-4567', 'iniadiaz@gmail.com'),
-('Juan', 'Pérez', '555-1234', 'juan.perez@example.com'),
-('María', 'González', '555-5678', 'maria.gonzalez@example.com'),
-('Carlos', 'Ramírez', '555-8765', 'carlos.ramirez@example.com');
-
-INSERT INTO hamburguesas (nombre, descripcion) VALUES
-('Cheeseburger', 'Hamburguesa con queso, lechuga y tomate'),
-('Bacon Burger', 'Hamburguesa con tocino, queso y cebolla'),
-('Veggie Burger', 'Hamburguesa vegetariana con aguacate y lechuga');
+INSERT INTO hamburguesas (nombre, descripcion, imagen) VALUES
+('Cheeseburger', 'Hamburguesa con queso, lechuga y tomate', NULL),
+('Bacon Burger', 'Hamburguesa con tocino, queso y cebolla', NULL),
+('Veggie Burger', 'Hamburguesa vegetariana con aguacate y lechuga', NULL);
 
 INSERT INTO ingredientes (descripcion, stock) VALUES
 ('Carne de res', 100),
@@ -104,7 +107,6 @@ INSERT INTO ingredientes (descripcion, stock) VALUES
 ('Tocino', 25),
 ('Cebolla', 35),
 ('Aguacate', 20);
-
 
 INSERT INTO pedidos (idCliente, modalidad, montoTotal) 
 VALUES  (1, 'TAKEAWAY', 10000),
@@ -134,6 +136,9 @@ INSERT INTO ingredientes_hamburguesa (idHamburguesa, codIngrediente, cantidad) V
 (3, 4, 1);  -- Veggie Burger: 1 Tomate
 
 INSERT INTO precios (idHamburguesa, fechaVigencia, precio) VALUES
-(1, '2024-02-01', 5.00),  -- Cheeseburger
-(2, '2024-03-01', 6.50),  -- Bacon Burger
-(3, '2024-01-01', 7.00);  -- Veggie Burger
+(1, '2024-02-01', 7000),  -- Cheeseburger
+(2, '2024-03-01', 8500),  -- Bacon Burger
+(3, '2024-01-01', 9000);  -- Veggie Burger
+
+-- Insertar un administrador
+INSERT INTO administradores (email) VALUES ('hamburgueseriautn@gmail.com');

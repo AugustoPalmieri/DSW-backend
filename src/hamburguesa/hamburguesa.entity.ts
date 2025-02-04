@@ -3,7 +3,7 @@ export class Hamburguesa {
         public nombre: string,
         public descripcion: string,
         public precio?: number,
-        public imagen?: string, // Nueva propiedad
+        public imagen?: string, 
         public idHamburguesa?: number
     ) {}
 }

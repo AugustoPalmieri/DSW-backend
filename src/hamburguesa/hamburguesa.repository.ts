@@ -47,27 +47,38 @@ export class HamburguesaRepository implements Repository<Hamburguesa> {
         const hamburguesaId = Number.parseInt(id);
         const { precio, ...hamburguesaRow } = hamburguesaInput;
     
-        // Actualizar datos de la hamburguesa
+        
         await pool.query("UPDATE hamburguesas SET ? WHERE idHamburguesa = ?", [
             hamburguesaRow,
             hamburguesaId,
         ]);
     
         if (precio !== undefined) {
-            const fechaVigencia = new Date();
+            const fechaVigencia = new Date().toISOString().split('T')[0]; 
     
-            // Insertar o actualizar precio en la tabla `precios`
-            await pool.query(
-                `INSERT INTO precios (idHamburguesa, fechaVigencia, precio) 
-                 VALUES (?, ?, ?)
-                 ON DUPLICATE KEY UPDATE precio = VALUES(precio)`,
-                [hamburguesaId, fechaVigencia, precio]
+            
+            const [existingPrice] = await pool.query<RowDataPacket[]>(
+                "SELECT * FROM precios WHERE idHamburguesa = ? AND fechaVigencia = ?",
+                [hamburguesaId, fechaVigencia]
             );
+    
+            if (existingPrice.length > 0) {
+                
+                await pool.query(
+                    "UPDATE precios SET precio = ? WHERE idHamburguesa = ? AND fechaVigencia = ?",
+                    [precio, hamburguesaId, fechaVigencia]
+                );
+            } else {
+                
+                await pool.query(
+                    "INSERT INTO precios (idHamburguesa, fechaVigencia, precio) VALUES (?, ?, ?)",
+                    [hamburguesaId, fechaVigencia, precio]
+                );
+            }
         }
     
         return await this.findOne({ id });
     }
-
 public async delete(item: { id: string }): Promise<Hamburguesa | undefined> {
         try {
             const hamburguesaToDelete = await this.findOne(item);
@@ -89,9 +100,9 @@ public async delete(item: { id: string }): Promise<Hamburguesa | undefined> {
         );
     
         if (precios.length === 0) {
-            return undefined; // No se encontró precio
+            return undefined; 
         }
     
-        return precios[0].precio; // Devuelve el precio más reciente
+        return precios[0].precio; 
     }
 }
