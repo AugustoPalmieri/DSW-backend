@@ -6,7 +6,7 @@ import { Hamburguesa } from "./hamburguesa.entity.js";
 
 const repository_2 = new HamburguesaRepository();
 
-// Configuración de Multer para almacenar imágenes en la carpeta uploads
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadDir = "./uploads";
@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Middleware para sanitizar inputs
+
 function sanitizeHamburguesaInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
         idHamburguesa: req.body.idHamburguesa,
@@ -33,7 +33,7 @@ function sanitizeHamburguesaInput(req: Request, res: Response, next: NextFunctio
     next();
 }
 
-// Controladores
+
 async function findAll(req: Request, res: Response) {
     res.json({ data: await repository_2.findAll() });
 }
@@ -58,15 +58,17 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
     req.body.sanitizedInput.idHamburguesa = req.params.idHamburguesa;
-    req.body.sanitizedInput["imagen"] = req.file?.filename;
-    const hamburguesa = await repository_2.update(req.params.idHamburguesa, req.body.sanitizedInput);
-
-    if (!hamburguesa) {
-        return res.status(404).send({ message: "Hamburguesa Not Found" });
+    if (req.file?.filename) {
+      req.body.sanitizedInput["imagen"] = req.file?.filename;
     }
-
+    const hamburguesa = await repository_2.update(req.params.idHamburguesa, req.body.sanitizedInput);
+  
+    if (!hamburguesa) {
+      return res.status(404).send({ message: "Hamburguesa Not Found" });
+    }
+  
     return res.status(200).send({ message: "HAMBURGUESA MODIFICADA CORRECTAMENTE", data: hamburguesa });
-}
+  }
 
 async function remove(req: Request, res: Response) {
     const idHamburguesa = req.params.idHamburguesa;
