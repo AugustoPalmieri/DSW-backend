@@ -15,10 +15,12 @@ function sanitizePedidoInput(req: Request, res: Response, next: NextFunction) {
     };
     next();
 }
+
 async function findAll(req: Request, res: Response) {
     const pedidos = await repository_4.findAll();
     res.json({ data: pedidos });
 }
+
 async function findOne(req: Request, res: Response) {
     const pedido = await repository_4.findOne({ id: req.params.idPedido });
     if (!pedido) {
@@ -27,6 +29,7 @@ async function findOne(req: Request, res: Response) {
         res.json(pedido);
     }
 }
+
 async function add(req: Request, res: Response) {
     const enter = req.body.sanitizedEnter;
     const hamburguesas = req.body.hamburguesas;
@@ -50,6 +53,7 @@ async function add(req: Request, res: Response) {
         return res.status(400).send({ message: error.message });
     }
 }
+
 async function update(req: Request, res: Response) {
     req.body.sanitizedEnter.idPedido = req.params.idPedido;
 
@@ -81,6 +85,7 @@ async function update(req: Request, res: Response) {
         return res.status(400).send({ message: error.message });
     }
 }
+
 async function remove(req: Request, res: Response) {
     const id = req.params.idPedido;
 
@@ -95,7 +100,7 @@ async function remove(req: Request, res: Response) {
 
     try {
         await repository_4.delete({ id });
-        return res.status(200).send({ message: 'Pedido eliminado correctamente' });
+        return res.status(200).send({ message: 'Pedido marcado como eliminado correctamente' });
     } catch (error: any) {
         return res.status(400).send({ message: `Error al eliminar el pedido: ${error.message}` });
     }
@@ -133,7 +138,6 @@ async function sendConfirmationEmail(pedido: Pedido) {
             return;
         }
 
-        
         const hamburguesaRepository = new HamburguesaRepository();  
 
         const hamburguesasConPrecio = await Promise.all(pedido.hamburguesas!.map(async (h) => {
@@ -141,10 +145,8 @@ async function sendConfirmationEmail(pedido: Pedido) {
             return { ...h, precio: precioHamburguesa };
         }));
 
-        
         const total = hamburguesasConPrecio.reduce((acc, h) => acc + (h.precio || 0) * h.cantidad, 0);
 
-    
         const mailOptions = {
             from: 'hamburgueseriautn@gmail.com', 
             to: cliente.email,
@@ -178,15 +180,13 @@ async function sendConfirmationEmail(pedido: Pedido) {
                 <p style="margin-top: 20px; font-size: 16px;">Gracias por tu compra. Te esperamos pronto en nuestra hamburguesería :).</p> 
                 <p style="margin-top: 20px; font-size: 16px;">Dirección: Zeballos 1341 </p>  
                 <p style="margin-top: 20px; font-size: 16px;">Mail de contacto: <strong>hamburgueseriautn@gmail.com</strong> </p>            `
-               
-                
         };
 
-    
         await transporter.sendMail(mailOptions);
         console.log('Correo enviado exitosamente');
     } catch (error) {
         console.error('Error al enviar el correo:', error);
     }
 }
+
 export { sanitizePedidoInput, findAll, findOne, add, update, remove, updateEstado };

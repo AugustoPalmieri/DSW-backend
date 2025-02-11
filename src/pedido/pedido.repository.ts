@@ -10,6 +10,7 @@ export class PedidoRepository implements Repository<Pedido> {
     static update(idPedido: string, pedidoEnter: Pedido) {
         throw new Error("Method not implemented.");
     }
+
     public async findAll(): Promise<Pedido[] | undefined> {
         const [pedidos] = await pool.query<RowDataPacket[]>(`
             SELECT ped.*, 
@@ -19,9 +20,10 @@ export class PedidoRepository implements Repository<Pedido> {
             FROM pedidos ped 
             LEFT JOIN hamburguesas_pedidos hp ON hp.idPedido = ped.idPedido
             LEFT JOIN hamburguesas h ON h.idHamburguesa = hp.idHamburguesa
+            WHERE ped.eliminado = FALSE
             GROUP BY ped.idPedido
         `);
-    
+
         const pedidosConMontoTotal = await Promise.all(
             pedidos.map(async row => {
                 const hamburguesas = row.hamburguesasIds ? row.hamburguesasIds.split(',').map((id: string, index: number) => ({
@@ -30,7 +32,6 @@ export class PedidoRepository implements Repository<Pedido> {
                     cantidad: parseInt(row.hamburguesasCantidades.split(',')[index], 10)
                 })) : [];
 
-                
                 let montoTotal = 0;
                 for (const hamburguesa of hamburguesas) {
                     const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
@@ -60,12 +61,12 @@ export class PedidoRepository implements Repository<Pedido> {
             FROM pedidos ped 
             LEFT JOIN hamburguesas_pedidos hp ON hp.idPedido = ped.idPedido
             LEFT JOIN hamburguesas h ON h.idHamburguesa = hp.idHamburguesa
-            WHERE ped.idPedido = ?
+            WHERE ped.idPedido = ? AND ped.eliminado = FALSE
             GROUP BY ped.idPedido
         `, [id]);
-    
+
         if (pedidos.length === 0) return undefined;
-    
+
         const pedido = pedidos[0];
         const hamburguesas = pedido.hamburguesasIds ? pedido.hamburguesasIds.split(',').map((id: string, index: number) => ({
             idHamburguesa: parseInt(id, 10),
@@ -73,7 +74,6 @@ export class PedidoRepository implements Repository<Pedido> {
             cantidad: parseInt(pedido.hamburguesasCantidades.split(',')[index], 10)
         })) : [];
 
-        
         let montoTotal = 0;
         for (const hamburguesa of hamburguesas) {
             const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
@@ -107,39 +107,38 @@ export class PedidoRepository implements Repository<Pedido> {
             idCliente: pedidoInput.idCliente
         };
 
-        
         const [result] = await pool.query<ResultSetHeader>('INSERT INTO pedidos SET ?', pedidoRow);
         pedidoInput.idPedido = result.insertId;
 
-        
         const hamburguesaPedidos = hamburguesas.map(h => [result.insertId, h.idHamburguesa, h.cantidad]);
 
         const query = 'INSERT INTO hamburguesas_pedidos (idPedido, idHamburguesa, cantidad) VALUES ?';
         await pool.query(query, [hamburguesaPedidos]);
         return pedidoInput;
     }
-    
+
     public async update(id: string, pedidoInput: Pedido): Promise<Pedido | undefined> {
         const pedidoId = Number.parseInt(id);
-    
+
         if (isNaN(pedidoId)) {
             throw new Error('ID del pedido no es válido');
         }
-    
+
         let montoTotal = 0;
         const hamburguesas = pedidoInput.hamburguesas || [];
-    
+
         if (!hamburguesas || hamburguesas.length === 0) {
             throw new Error('No se pueden actualizar pedidos sin hamburguesas');
         }
-    
+
         for (const hamburguesa of hamburguesas) {
             const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
             if (precio) {
                 montoTotal += precio * hamburguesa.cantidad;
             }
         }
-            const pedidoRow = {
+
+        const pedidoRow = {
             modalidad: pedidoInput.modalidad,
             montoTotal,
             estado: pedidoInput.estado,
@@ -150,20 +149,20 @@ export class PedidoRepository implements Repository<Pedido> {
         try {
             await connection.beginTransaction();
             const [result] = await connection.query('UPDATE pedidos SET ? WHERE idPedido = ?', [pedidoRow, pedidoId]);
-    
+
             if ((result as any).affectedRows === 0) {
                 throw new Error('No se encontró el pedido para actualizar');
             }
             await connection.query('DELETE FROM hamburguesas_pedidos WHERE idPedido = ?', [pedidoId]);
-    
+
             const hamburguesaPedidos = hamburguesas.map(h => [pedidoId, h.idHamburguesa, h.cantidad]);
             if (hamburguesaPedidos.length > 0) {
                 await connection.query('INSERT INTO hamburguesas_pedidos (idPedido, idHamburguesa, cantidad) VALUES ?', [hamburguesaPedidos]);
             }
-    
+
             await connection.commit();
             connection.release();
-    
+
             return await this.findOne({ id });
         } catch (error: any) {
             await connection.rollback();
@@ -176,22 +175,20 @@ export class PedidoRepository implements Repository<Pedido> {
         try {
             const pedidoToDelete = await this.findOne(item);
             const pedidoId = Number.parseInt(item.id);
-    
+
             if (!pedidoToDelete) {
                 throw new Error("Pedido no encontrado");
             }
-    
-            
-            await pool.query('DELETE FROM hamburguesas_pedidos WHERE idPedido = ?', [pedidoId]);
 
-            await pool.query('DELETE FROM pedidos WHERE idPedido = ?', [pedidoId]);
-    
+            // Borrado lógico
+            await pool.query('UPDATE pedidos SET eliminado = TRUE WHERE idPedido = ?', [pedidoId]);
+
             return pedidoToDelete;
         } catch (error: any) {
-            throw new Error('Unable to delete pedido');
+            throw new Error('No se pudo eliminar el pedido');
         }
     }
-    
+
     public async updateEstado(idPedido: string, estado: string) {
         try {
             const result = await pool.query(`
@@ -200,18 +197,16 @@ export class PedidoRepository implements Repository<Pedido> {
                 WHERE idPedido = ?`, 
                 [estado, idPedido]
             );
-    
+
             return { idPedido, estado };  
         } catch (error: any) {
             throw new Error(error.message);  
         }
     }
+
     public async getClienteById(idCliente: number): Promise<any | undefined> {
         const [clientes] = await pool.query<RowDataPacket[]>('SELECT * FROM clientes WHERE idCliente = ?', [idCliente]);
         if (clientes.length === 0) return undefined;
         return clientes[0];
     }
-    }
-
-
-
+}

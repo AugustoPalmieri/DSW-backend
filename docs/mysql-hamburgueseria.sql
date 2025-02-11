@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS pedidos (
     idCliente INT UNSIGNED NOT NULL,
     modalidad VARCHAR(100)  NULL,
     montoTotal DECIMAL(10, 2)  NULL,
-    estado VARCHAR(45) NULL,  
+    estado VARCHAR(45) NULL,
+    eliminado BOOLEAN DEFAULT FALSE,  
     PRIMARY KEY (idPedido),
     CONSTRAINT fk_pedidos_clientes
     FOREIGN KEY (idCliente) REFERENCES clientes(idCliente)
