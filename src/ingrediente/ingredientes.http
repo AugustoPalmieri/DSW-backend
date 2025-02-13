@@ -34,4 +34,4 @@ Content-Type: application/json
 }
 
 ### borrar un ingrediente
-DELETE http://localhost:3000/api/ingredientes/15
+DELETE http://localhost:3000/api/ingredientes/29

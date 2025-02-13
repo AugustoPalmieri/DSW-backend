@@ -40,41 +40,18 @@ export class IngredienteRepository implements Repository<Ingrediente> {
     }
     public async delete(item: { id: string }): Promise<Ingrediente | undefined> {
         try {
-            const ingredienteToDelete = await this.findOne(item);
-            const ingredienteId = Number.parseInt(item.id);
-    
-            if (!ingredienteToDelete) {
-                throw new Error("Ingrediente no encontrado");
-            }
-    
-            const [rows]: [any[], any] = await pool.query(
-                'SELECT * FROM ingredientes_hamburguesa WHERE codIngrediente = ?',
-                [ingredienteId]
-            );
-    
-            if (rows.length > 0) {
-                throw new Error("Debe eliminar la hamburguesa que utiliza el ingrediente");
-            }
-            await pool.query('DELETE FROM ingredientes WHERE codIngrediente = ?', [ingredienteId]);
-    
-            return ingredienteToDelete;
+          const ingredienteToDelete = await this.findOne(item);
+          const ingredienteId = Number.parseInt(item.id);
+      
+          
+          await pool.query('DELETE FROM ingredientes WHERE codIngrediente = ?', [ingredienteId]);
+      
+          return ingredienteToDelete;
         } catch (error: any) {
-            throw new Error(error.message || 'No se pudo eliminar el ingrediente');
+          throw new Error(error.message || 'No se pudo eliminar el ingrediente');
         }
-        
-    }
-    public async getHamburguesasByIngrediente(codIngrediente: number): Promise<string[]> {
-        const query = `
-            SELECT h.nombre 
-            FROM hamburguesas AS h
-            JOIN ingredientes_hamburguesa AS ih ON h.idHamburguesa = ih.idHamburguesa
-            WHERE ih.codIngrediente = ?
-        `;
-        const [rows] = await pool.query<RowDataPacket[]>(query, [codIngrediente]);
-        
-        
-        return rows.map((row) => row.nombre);
-    }
+      }
+    
     
     
 
