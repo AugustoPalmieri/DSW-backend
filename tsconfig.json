@@ -2,8 +2,8 @@
   "compilerOptions": {
     "incremental": true,
     "target": "esnext",
-    "module": "esnext", 
-    "moduleResolution": "node", 
+    "module": "esnext",
+    "moduleResolution": "node",
     "sourceMap": true,
     "types": ["jest"],
     "outDir": "./dist",
@@ -14,11 +14,8 @@
     "skipLibCheck": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "allowJs": true,
-    "checkJs": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*", "**/*.ts"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules"]
 }

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import transporter from '../mailService';// Función para enviar un código al correo electrónico
+import transporter from '../mailService.js';// Función para enviar un código al correo electrónico
 export const enviarCodigo = async (req: Request, res: Response) => {
   const { email } = req.body;
   

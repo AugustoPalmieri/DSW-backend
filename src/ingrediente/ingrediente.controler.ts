@@ -28,6 +28,13 @@ async function findOne(req:Request,res:Response){
 
 async function add(req: Request, res:Response){
     const enter= req.body.sanitizedEnter
+    const ingredientes = await repository_3.findAll();
+    const existe = Array.isArray(ingredientes) && ingredientes.some(
+        (ing: Ingrediente) => ing.descripcion.trim().toLowerCase() === enter.descripcion.trim().toLowerCase()
+    )
+    if (existe) {
+        return res.status(400).send({ message: 'Ya existe un ingrediente con ese nombre.' });
+    }
     const ingredienteEnter = new Ingrediente(enter.descripcion,enter.stock)
     const ingrediente = await repository_3.add(ingredienteEnter)
     return res.status(201).send({message: 'INGREDIENTE CREADA', data: ingrediente})

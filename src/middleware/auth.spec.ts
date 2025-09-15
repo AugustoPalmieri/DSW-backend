@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { authMiddleware } from "./auth";
+import { authMiddleware } from "./auth.js";
 
 jest.mock("jsonwebtoken"); // Mock de jwt
 

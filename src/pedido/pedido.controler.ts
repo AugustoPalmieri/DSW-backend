@@ -3,6 +3,8 @@ import { PedidoRepository } from "./pedido.repository.js";
 import { Pedido } from "./pedido.entity.js";
 import transporter from "../mailService.js";
 import { HamburguesaRepository } from "../hamburguesa/hamburguesa.repository.js";
+import { pool } from "../shared/db/conn.mysql.js";
+import { RowDataPacket } from "mysql2";
 const repository_4 = new PedidoRepository();
 
 function sanitizePedidoInput(req: Request, res: Response, next: NextFunction) {
@@ -34,13 +36,18 @@ async function add(req: Request, res: Response) {
     const enter = req.body.sanitizedEnter;
     const hamburguesas = req.body.hamburguesas;
 
+    console.log('Datos recibidos:', { enter, hamburguesas });
+
     if (!hamburguesas || hamburguesas.length === 0) {
         return res.status(400).send({ message: 'Debe incluir al menos una hamburguesa en el pedido' });
     }
+    const fechaPedido = new Date();
 
-    const pedidoEnter = new Pedido(enter.modalidad, 0, enter.estado, enter.idCliente);
+    const pedidoEnter = new Pedido(fechaPedido,enter.modalidad, 0, enter.estado, enter.idCliente);
     pedidoEnter.hamburguesas = hamburguesas;
-
+    
+    console.log('Pedido a crear:', pedidoEnter);
+    
     try {
         const pedido = await repository_4.add(pedidoEnter);
         if (pedido) {
@@ -50,6 +57,7 @@ async function add(req: Request, res: Response) {
         }
         return res.status(201).send({ message: 'PEDIDO CREADO', data: pedido });
     } catch (error: any) {
+        console.error('Error creando pedido:', error);
         return res.status(400).send({ message: error.message });
     }
 }
@@ -64,6 +72,7 @@ async function update(req: Request, res: Response) {
     }
 
     const pedidoEnter = new Pedido(
+        req.body.sanitizedEnter.fechaPedido,
         req.body.sanitizedEnter.modalidad,
         0, 
         req.body.sanitizedEnter.estado,
@@ -145,7 +154,19 @@ async function sendConfirmationEmail(pedido: Pedido) {
             return { ...h, precio: precioHamburguesa };
         }));
 
-        const total = hamburguesasConPrecio.reduce((acc, h) => acc + (h.precio || 0) * h.cantidad, 0);
+        const subtotal = hamburguesasConPrecio.reduce((acc, h) => acc + (h.precio || 0) * h.cantidad, 0);
+        
+        let precioDelivery = 0;
+        if (pedido.modalidad.toLowerCase() === 'delivery') {
+            const [rows] = await pool.query<RowDataPacket[]>(
+                "SELECT precio FROM delivery ORDER BY fechaActualizacion DESC LIMIT 1"
+            );
+            if (rows.length > 0) {
+                precioDelivery = Number(rows[0].precio);
+            }
+        }
+        
+        const total = subtotal + precioDelivery;
 
         const mailOptions = {
             from: 'hamburgueseriautn@gmail.com', 
@@ -172,6 +193,15 @@ async function sendConfirmationEmail(pedido: Pedido) {
                             </ul>
                         </td>
                     </tr>
+                    <tr>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Subtotal</th>
+                        <td style="border: 1px solid #ddd; padding: 8px;">$${subtotal.toFixed(2)}</td>
+                    </tr>
+                    ${precioDelivery > 0 ? `
+                    <tr>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Delivery</th>
+                        <td style="border: 1px solid #ddd; padding: 8px;">$${precioDelivery.toFixed(2)}</td>
+                    </tr>` : ''}
                     <tr>
                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Total</th>
                         <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">$${total.toFixed(2)}</td>

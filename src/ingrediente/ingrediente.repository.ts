@@ -24,7 +24,14 @@ export class IngredienteRepository implements Repository<Ingrediente> {
         const ingrediente = ingredientes[0] as Ingrediente
         return ingrediente
     }
-    public async add(ingredienteInput: Ingrediente): Promise<Ingrediente | undefined>{ ///puede ser la funct de sanitize
+    public async add(ingredienteInput: Ingrediente): Promise<Ingrediente | undefined>{ 
+        const [rows] = await pool.query<RowDataPacket[]>(
+        'SELECT * FROM ingredientes WHERE LOWER(descripcion) = LOWER(?)',
+        [ingredienteInput.descripcion.trim()]
+    );
+    if ((rows as RowDataPacket[]).length > 0) {
+        throw new Error('Ya existe un ingrediente con ese nombre.');
+    }
         const{codIngrediente, ...ingredienteRow} = ingredienteInput
         const [result] = await pool.query<ResultSetHeader> ('insert into ingredientes set ?', [ingredienteRow])
         ingredienteInput.codIngrediente = result.insertId

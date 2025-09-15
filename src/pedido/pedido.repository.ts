@@ -95,16 +95,37 @@ export class PedidoRepository implements Repository<Pedido> {
 
         for (const hamburguesa of hamburguesas) {
             const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
+            console.log(`Precio hamburguesa ${hamburguesa.idHamburguesa}:`, precio);
             if (precio) {
                 montoTotal += precio * hamburguesa.cantidad;
             }
         }
+        console.log('Monto hamburguesas:', montoTotal);
+        
+        if (pedidoInput.modalidad && pedidoInput.modalidad.toLowerCase() === "delivery") {
+            try {
+                const [rows] = await pool.query<RowDataPacket[]>(
+                    "SELECT precio FROM delivery ORDER BY fechaActualizacion DESC LIMIT 1"
+                );
+                if (rows.length > 0) {
+                    console.log('Precio delivery:', rows[0].precio);
+                    montoTotal += Number(rows[0].precio);
+                } else {
+                    console.warn('No hay precio de delivery configurado');
+                }
+            } catch (error) {
+                console.error('Error obteniendo precio delivery:', error);
+            }
+        }
+        
+        console.log('Monto total final:', montoTotal);
 
         const pedidoRow = {
             modalidad: pedidoInput.modalidad,
             montoTotal,
             estado: pedidoInput.estado,
-            idCliente: pedidoInput.idCliente
+            idCliente: pedidoInput.idCliente,
+            fechaPedido: pedidoInput.fechaPedido
         };
 
         const [result] = await pool.query<ResultSetHeader>('INSERT INTO pedidos SET ?', pedidoRow);

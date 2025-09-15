@@ -7,9 +7,10 @@ import { hamburguesaRouter } from './hamburguesa/hamburguesa.routes.js';
 import { ingredienteRouter } from './ingrediente/ingrediente.routes.js';
 import { pedidoRouter } from './pedido/pedido.routes.js';
 import precioRouter from './precio/precio.routes.js';
-import contactoRoutes from './contacto/contacto.routes.js'
-import adminRoutes from './adminstrador/admin.routes.js'
-const app = express();
+import contactoRoutes from './contacto/contacto.routes.js';
+import adminRoutes from './adminstrador/admin.routes.js';
+import { deliveryRouter } from './delivery/delivery.routes.js';
+import { sendCode, verifyCode, resetPassword } from './cliente/password-reset.controller.js';const app = express();
 
 
 dotenv.config();
@@ -28,8 +29,8 @@ app.use('/api/ingredientes', ingredienteRouter);
 app.use('/api/pedidos', pedidoRouter);
 app.use('/api/precios', precioRouter);
 app.use('/contacto', contactoRoutes);
-app.use('/api/admin', adminRoutes)
-
+app.use('/api/admin', adminRoutes);
+app.use('/api/delivery', deliveryRouter);
 app.use((_, res) => {
   return res.status(404).send({ message: 'Resource Not Found' });
 });
