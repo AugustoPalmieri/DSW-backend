@@ -12,7 +12,7 @@
 
 # DSW-backend - API Hamburguesería
 
-API REST para sistema de gestión de hamburguesería desarrollada con Node.js, Express y TypeScript.
+API REST para sistema de gestión integral de hamburguesería desarrollada con Node.js, Express y TypeScript.
 
 ## Tecnologías
 
@@ -66,3 +66,8 @@ POST /api/ingredientes - Crear ingrediente
 
 ## testing
 - npm test
+
+## Archivo .env
+JWT_SECRET=tu_clave_secreta
+EMAIL_USER=tu_email@gmail.com
+EMAIL_PASSWORD=tu_password_app
