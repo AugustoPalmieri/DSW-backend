@@ -10,7 +10,7 @@ import precioRouter from './precio/precio.routes.js';
 import contactoRoutes from './contacto/contacto.routes.js';
 import adminRoutes from './adminstrador/admin.routes.js';
 import { deliveryRouter } from './delivery/delivery.routes.js';
-import { sendCode, verifyCode, resetPassword } from './cliente/password-reset.controller.js';const app = express();
+const app = express();
 
 
 dotenv.config();
