@@ -69,5 +69,7 @@ POST /api/ingredientes - Crear ingrediente
 
 ## Archivo .env
 JWT_SECRET=tu_clave_secreta
+
 EMAIL_USER=tu_email@gmail.com
+
 EMAIL_PASSWORD=tu_password_app
