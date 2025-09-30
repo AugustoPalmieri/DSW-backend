@@ -11,7 +11,14 @@ describe('GET /api/ingredientes', () => {
 
 describe('GET /api/ingredientes/:codIngrediente', () => {
   it('debería devolver un ingrediente por su código', async () => {
-    const codIngrediente = 1; // Usar un código válido para un ingrediente en tu base de datos
+    // Primero crear un ingrediente
+    const nuevoIngrediente = {
+      descripcion: `Ingrediente Test Get ${Date.now()}`,
+      stock: 50,
+    };
+    const createResponse = await request(app).post('/api/ingredientes').send(nuevoIngrediente);
+    const codIngrediente = createResponse.body.data.codIngrediente;
+    
     const response = await request(app).get(`/api/ingredientes/${codIngrediente}`);
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('codIngrediente', codIngrediente);
@@ -28,27 +35,34 @@ describe('GET /api/ingredientes/:codIngrediente', () => {
 describe('POST /api/ingredientes', () => {
   it('debería crear un nuevo ingrediente', async () => {
     const nuevoIngrediente = {
-      descripcion: 'Lechuga',
+      descripcion: `Lechuga Test ${Date.now()}`,
       stock: 100,
     };
     const response = await request(app).post('/api/ingredientes').send(nuevoIngrediente);
     expect(response.status).toBe(201);
-    expect(response.body.message).toBe('INGREDIENTE CREADA'); // Mensaje esperado según el controlador
+    expect(response.body.message).toBe('INGREDIENTE CREADA');
     expect(response.body.data).toHaveProperty('codIngrediente');
   });
 });
 
 describe('PUT /api/ingredientes/:codIngrediente', () => {
   it('debería actualizar un ingrediente existente', async () => {
-    const codIngrediente = 1;
+    // Primero crear un ingrediente
+    const nuevoIngrediente = {
+      descripcion: `Ingrediente Test Update ${Date.now()}`,
+      stock: 30,
+    };
+    const createResponse = await request(app).post('/api/ingredientes').send(nuevoIngrediente);
+    const codIngrediente = createResponse.body.data.codIngrediente;
+    
     const actualizado = {
-      descripcion: 'Tomate',
+      descripcion: 'Tomate Actualizado',
       stock: 120,
     };
     const response = await request(app).put(`/api/ingredientes/${codIngrediente}`).send(actualizado);
     expect(response.status).toBe(200);
-    expect(response.body.message).toBe('INGREDIENTE MODIFICADO CORRECTAMENTE'); // Mensaje esperado según el controlador
-    expect(response.body.data).toHaveProperty('descripcion', 'Tomate');
+    expect(response.body.message).toBe('INGREDIENTE MODIFICADO CORRECTAMENTE');
+    expect(response.body.data).toHaveProperty('descripcion', 'Tomate Actualizado');
   });
 
   it('debería devolver error si no se encuentra el ingrediente', async () => {
@@ -65,11 +79,16 @@ describe('PUT /api/ingredientes/:codIngrediente', () => {
 
 describe('DELETE /api/ingredientes/:codIngrediente', () => {
   it('debería eliminar un ingrediente', async () => {
-    const codIngrediente = 36;
+    // Primero crear un ingrediente
+    const nuevoIngrediente = {
+      descripcion: `Ingrediente Test Delete ${Date.now()}`,
+      stock: 25,
+    };
+    const createResponse = await request(app).post('/api/ingredientes').send(nuevoIngrediente);
+    const codIngrediente = createResponse.body.data.codIngrediente;
+    
     const response = await request(app).delete(`/api/ingredientes/${codIngrediente}`);
     expect(response.status).toBe(200); 
     expect(response.body.message).toBe('INGREDIENTE ELIMINADO CORRECTAMENTE');
-}, 10000); 
-
-
+  }, 10000); 
 });

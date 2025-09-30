@@ -4,7 +4,13 @@
   "type": "module",
   "main": "app.js",
   "scripts": {
-    "start:dev": "tsc-watch --noclear -p ./tsconfig.json --onSuccess  \"node ./dist/app.js\""
+    "start:dev": "tsc-watch --noclear -p ./tsconfig.json --onSuccess  \"node ./dist/server.js\"",
+    "start": "node ./dist/server.js",
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose"
   },
   "keywords": [],
   "author": "",

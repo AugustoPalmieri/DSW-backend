@@ -35,8 +35,11 @@ app.use((_, res) => {
   return res.status(404).send({ message: 'Resource Not Found' });
 });
 
-app.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000/');
-});
+// Solo iniciar el servidor si no estamos en modo test
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(3000, () => {
+    console.log('Server is running on http://localhost:3000/');
+  });
+}
 
 export {app};
