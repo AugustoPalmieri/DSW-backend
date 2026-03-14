@@ -1,7 +1,8 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import dotenv from 'dotenv';
 import { clienteRouter } from './cliente/cliente.routes.js';
 import { hamburguesaRouter } from './hamburguesa/hamburguesa.routes.js';
 import { ingredienteRouter } from './ingrediente/ingrediente.routes.js';
@@ -10,10 +11,9 @@ import precioRouter from './precio/precio.routes.js';
 import contactoRoutes from './contacto/contacto.routes.js';
 import adminRoutes from './adminstrador/admin.routes.js';
 import { deliveryRouter } from './delivery/delivery.routes.js';
-const app = express();
+export const app = express();
 
 
-dotenv.config();
 
 app.use(express.json());
 
@@ -36,10 +36,11 @@ app.use((_, res) => {
 });
 
 // Solo iniciar el servidor si no estamos en modo test
+/*
 if (process.env.NODE_ENV !== 'test') {
   app.listen(3000, () => {
     console.log('Server is running on http://localhost:3000/');
   });
 }
 
-export {app};
+export {app}; */

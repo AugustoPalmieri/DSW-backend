@@ -125,7 +125,7 @@ export class PedidoRepository implements Repository<Pedido> {
             montoTotal,
             estado: pedidoInput.estado,
             idCliente: pedidoInput.idCliente,
-            fechaPedido: pedidoInput.fechaPedido
+            
         };
 
         const [result] = await pool.query<ResultSetHeader>('INSERT INTO pedidos SET ?', pedidoRow);

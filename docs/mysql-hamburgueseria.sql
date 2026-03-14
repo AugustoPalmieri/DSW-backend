@@ -89,6 +89,14 @@ CREATE TABLE IF NOT EXISTS precios (
 );
 
 
+CREATE TABLE IF NOT EXISTS delivery (
+    idDelivery INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    precio DECIMAL(10,2) NULL,
+    fechaActualizacion DATETIME NULL,
+    PRIMARY KEY (idDelivery)
+);
+
+
 INSERT INTO clientes (nombre, apellido, telefono, email, passwordHash) 
 VALUES ('IÑAKI', 'DIAZ', '123-4567', 'iniadiaz@gmail.com', '$2a$10$defaultPlaceholderHash...'),
 ('Juan', 'Pérez', '555-1234', 'juan.perez@example.com', '$2a$10$defaultPlaceholderHash...'),
@@ -122,6 +130,9 @@ VALUES
 (1, 2, 1),  -- Pedido 1: 1 Bacon Burger
 (2, 2, 2),  -- Pedido 2: 2 Bacon Burgers
 (3, 3, 1);  -- Pedido 3: 1 Veggie Burger
+
+INSERT INTO delivery (precio, fechaActualizacion)
+VALUES (1500, NOW());
 
 INSERT INTO ingredientes_hamburguesa (idHamburguesa, codIngrediente, cantidad) VALUES
 (1, 1, 1),  -- Cheeseburger: 1 Carne de res
