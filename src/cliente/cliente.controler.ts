@@ -62,7 +62,29 @@ async function add(req: Request, res: Response) {
     }
 }
 
+async function addRapido(req: Request, res: Response) {
+    const { nombre, apellido, telefono } = req.body;
 
+    if (!nombre || !apellido || !telefono) {
+        return res.status(400).json({ error: "Nombre, apellido y teléfono son obligatorios" });
+    }
+
+    const nuevoCliente = new Cliente(
+        nombre,
+        apellido,
+        telefono,
+        undefined,   // email
+        undefined,   // direccion
+        'SIN_PASSWORD' // passwordHash placeholder
+    );
+
+    try {
+        const clienteCreado = await repository.add(nuevoCliente);
+        return res.status(201).json({ message: "Cliente registrado exitosamente", data: clienteCreado });
+    } catch (error) {
+        return res.status(500).json({ error: "Error al crear el cliente" });
+    }
+}
 async function update(req: Request, res: Response) {
     const idCliente = req.params.idCliente;
     const sanitizedData = req.body.sanitizedData || req.body;
@@ -128,7 +150,11 @@ async function findByEmail(req: Request, res: Response) {
             }
     
             // Comparar la contraseña ingresada con el passwordHash en la base de datos
-            const isMatch = await bcrypt.compare(password, cliente.passwordHash);
+            if (!cliente.passwordHash || cliente.passwordHash === 'SIN_PASSWORD') {
+    return res.status(400).json({ error: "Este cliente no tiene contraseña configurada. Contacte al administrador." });
+}
+
+const isMatch = await bcrypt.compare(password, cliente.passwordHash);
             if (!isMatch) {
                 return res.status(400).json({ error: "Credenciales inválidas" });
             }
@@ -219,5 +245,5 @@ async function resetPassword(req: Request, res: Response) {
 
     
     
-export{sanitizeClienteInput, findAll, findOne,add, update, remove,findByEmail,login, requestPasswordReset,
+export{sanitizeClienteInput, findAll, findOne,add,addRapido,update, remove,findByEmail,login, requestPasswordReset,
     resetPassword};
