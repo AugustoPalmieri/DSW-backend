@@ -3,6 +3,7 @@ import { Pedido } from "./pedido.entity.js";
 import { pool } from "../shared/db/conn.mysql.js";
 import { ResultSetHeader, RowDataPacket } from "mysql2";
 import { PrecioRepository } from "../precio/precio.repository.js";
+import { HamburguesaRepository } from "../hamburguesa/hamburguesa.repository.js";
 
 const precioRepository = new PrecioRepository();
 
@@ -90,53 +91,52 @@ export class PedidoRepository implements Repository<Pedido> {
     }
 
     public async add(pedidoInput: Pedido): Promise<Pedido | undefined> {
-        let montoTotal = 0;
-        const hamburguesas = pedidoInput.hamburguesas || [];
+    const hamburguesaRepo = new HamburguesaRepository();
+    const hamburguesas = pedidoInput.hamburguesas || [];
 
-        for (const hamburguesa of hamburguesas) {
-            const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
-            console.log(`Precio hamburguesa ${hamburguesa.idHamburguesa}:`, precio);
-            if (precio) {
-                montoTotal += precio * hamburguesa.cantidad;
-            }
-        }
-        console.log('Monto hamburguesas:', montoTotal);
-        
-        if (pedidoInput.modalidad && pedidoInput.modalidad.toLowerCase() === "delivery") {
-            try {
-                const [rows] = await pool.query<RowDataPacket[]>(
-                    "SELECT precio FROM delivery ORDER BY fechaActualizacion DESC LIMIT 1"
-                );
-                if (rows.length > 0) {
-                    console.log('Precio delivery:', rows[0].precio);
-                    montoTotal += Number(rows[0].precio);
-                } else {
-                    console.warn('No hay precio de delivery configurado');
-                }
-            } catch (error) {
-                console.error('Error obteniendo precio delivery:', error);
-            }
-        }
-        
-        console.log('Monto total final:', montoTotal);
+    // Validar stock antes de crear el pedido
+    const { valido, faltantes } = await hamburguesaRepo.validarStock(
+        hamburguesas.map(h => ({ idHamburguesa: h.idHamburguesa, cantidad: h.cantidad }))
+    );
 
-        const pedidoRow = {
-            modalidad: pedidoInput.modalidad,
-            montoTotal,
-            estado: pedidoInput.estado,
-            idCliente: pedidoInput.idCliente,
-            
-        };
-
-        const [result] = await pool.query<ResultSetHeader>('INSERT INTO pedidos SET ?', pedidoRow);
-        pedidoInput.idPedido = result.insertId;
-
-        const hamburguesaPedidos = hamburguesas.map(h => [result.insertId, h.idHamburguesa, h.cantidad]);
-
-        const query = 'INSERT INTO hamburguesas_pedidos (idPedido, idHamburguesa, cantidad) VALUES ?';
-        await pool.query(query, [hamburguesaPedidos]);
-        return pedidoInput;
+    if (!valido) {
+        throw new Error(`Stock insuficiente para: ${faltantes.join(', ')}`);
     }
+
+    // Calcular monto total
+    let montoTotal = 0;
+    for (const hamburguesa of hamburguesas) {
+        const precio = await precioRepository.getPrecioActual(hamburguesa.idHamburguesa);
+        if (precio) montoTotal += precio * hamburguesa.cantidad;
+    }
+
+    if (pedidoInput.modalidad?.toLowerCase() === "delivery") {
+        const [rows] = await pool.query<RowDataPacket[]>(
+            "SELECT precio FROM delivery ORDER BY fechaActualizacion DESC LIMIT 1"
+        );
+        if (rows.length > 0) montoTotal += Number(rows[0].precio);
+    }
+
+    const pedidoRow = {
+        modalidad: pedidoInput.modalidad,
+        montoTotal,
+        estado: pedidoInput.estado,
+        idCliente: pedidoInput.idCliente,
+    };
+
+    const [result] = await pool.query<ResultSetHeader>('INSERT INTO pedidos SET ?', pedidoRow);
+    pedidoInput.idPedido = result.insertId;
+
+    const hamburguesaPedidos = hamburguesas.map(h => [result.insertId, h.idHamburguesa, h.cantidad]);
+    await pool.query('INSERT INTO hamburguesas_pedidos (idPedido, idHamburguesa, cantidad) VALUES ?', [hamburguesaPedidos]);
+
+    // Descontar stock después de crear el pedido
+    await hamburguesaRepo.descontarStock(
+        hamburguesas.map(h => ({ idHamburguesa: h.idHamburguesa, cantidad: h.cantidad }))
+    );
+
+    return pedidoInput;
+}
 
     public async update(id: string, pedidoInput: Pedido): Promise<Pedido | undefined> {
         const pedidoId = Number.parseInt(id);
