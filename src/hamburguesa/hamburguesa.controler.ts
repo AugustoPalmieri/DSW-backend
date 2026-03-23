@@ -30,13 +30,24 @@ function sanitizeHamburguesaInput(req: Request, res: Response, next: NextFunctio
 }
 
 async function findAll(req: Request, res: Response) {
-    res.json({ data: await repository_2.findAll() });
+    try {
+        const hamburguesas = await repository_2.findAll();
+        res.json({ data: hamburguesas });
+    } catch (error) {
+        res.status(500).send({ message: "Error al obtener las hamburguesas" });
+    }
 }
 
 async function findOne(req: Request, res: Response) {
-    const hamburguesa = await repository_2.findOne({ id: req.params.idHamburguesa });
-    if (!hamburguesa) return res.status(404).send({ message: "Hamburguesa Not Found" });
-    res.json(hamburguesa);
+    try {
+        const hamburguesa = await repository_2.findOne({ id: req.params.idHamburguesa });
+        if (!hamburguesa) {
+            return res.status(404).send({ message: "Hamburguesa Not Found" });
+        }
+        res.json(hamburguesa);
+    } catch (error) {
+        res.status(500).send({ message: "Error al obtener la hamburguesa" });
+    }
 }
 
 async function getIngredientes(req: Request, res: Response) {
@@ -50,20 +61,33 @@ async function getIngredientes(req: Request, res: Response) {
 }
 
 async function add(req: Request, res: Response) {
-    const data = req.body.sanitizedInput;
-    const hamburguesaInput = new Hamburguesa(data.nombre, data.descripcion, data.precio);
-    if (req.file?.filename) hamburguesaInput["imagen"] = req.file.filename;
-    (hamburguesaInput as any).ingredientes = data.ingredientes;
-    const hamburguesa = await repository_2.add(hamburguesaInput);
-    return res.status(201).send({ message: "HAMBURGUESA CREADA", data: hamburguesa });
+    try {
+        const data = req.body.sanitizedInput;
+        if (!data.nombre || !data.descripcion) {
+            return res.status(400).send({ message: "Nombre y descripción son obligatorios" });
+        }
+        const hamburguesaInput = new Hamburguesa(data.nombre, data.descripcion, data.precio);
+        if (req.file?.filename) hamburguesaInput["imagen"] = req.file.filename;
+        (hamburguesaInput as any).ingredientes = data.ingredientes;
+        const hamburguesa = await repository_2.add(hamburguesaInput);
+        return res.status(201).send({ message: "HAMBURGUESA CREADA", data: hamburguesa });
+    } catch (error) {
+        res.status(500).send({ message: "Error al crear la hamburguesa" });
+    }
 }
 
 async function update(req: Request, res: Response) {
-    req.body.sanitizedInput.idHamburguesa = req.params.idHamburguesa;
-    if (req.file?.filename) req.body.sanitizedInput["imagen"] = req.file.filename;
-    const hamburguesa = await repository_2.update(req.params.idHamburguesa, req.body.sanitizedInput);
-    if (!hamburguesa) return res.status(404).send({ message: "Hamburguesa Not Found" });
-    return res.status(200).send({ message: "HAMBURGUESA MODIFICADA CORRECTAMENTE", data: hamburguesa });
+    try {
+        req.body.sanitizedInput.idHamburguesa = req.params.idHamburguesa;
+        if (req.file?.filename) req.body.sanitizedInput["imagen"] = req.file.filename;
+        const hamburguesa = await repository_2.update(req.params.idHamburguesa, req.body.sanitizedInput);
+        if (!hamburguesa) {
+            return res.status(404).send({ message: "Hamburguesa Not Found" });
+        }
+        return res.status(200).send({ message: "HAMBURGUESA MODIFICADA CORRECTAMENTE", data: hamburguesa });
+    } catch (error) {
+        res.status(500).send({ message: "Error al modificar la hamburguesa" });
+    }
 }
 
 async function remove(req: Request, res: Response) {
