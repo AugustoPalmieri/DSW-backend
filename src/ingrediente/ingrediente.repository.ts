@@ -8,7 +8,7 @@ import { ResultSetHeader, RowDataPacket } from "mysql2";
 
 export class IngredienteRepository implements Repository<Ingrediente> {
     public async findAll(): Promise< Ingrediente[]| undefined>  {
-        const [ingredientes] = await pool.query('select * from ingredientes')
+        const [ingredientes] = await pool.query('select * from ingredientes WHERE activo = TRUE')
         return ingredientes as Ingrediente[]  
         /*falta el for que se usa en el video api23 VER SI DEBERIAMOS USARLO NOSTROS
         for (const character of characters as Character[]) {
@@ -17,7 +17,7 @@ export class IngredienteRepository implements Repository<Ingrediente> {
     }
     public async findOne(item: { id: string }): Promise< Ingrediente | undefined> {
         const id = Number.parseInt(item.id)
-        const [ingredientes] = await pool.query<RowDataPacket[]>('select * from ingredientes where codIngrediente = ?', [id])
+        const [ingredientes] = await pool.query<RowDataPacket[]>('select * from ingredientes where codIngrediente = ? AND activo = TRUE', [id])
         if(ingredientes.length === 0){
             return undefined
         }
@@ -26,7 +26,7 @@ export class IngredienteRepository implements Repository<Ingrediente> {
     }
     public async add(ingredienteInput: Ingrediente): Promise<Ingrediente | undefined>{ 
         const [rows] = await pool.query<RowDataPacket[]>(
-        'SELECT * FROM ingredientes WHERE LOWER(descripcion) = LOWER(?)',
+        'SELECT * FROM ingredientes WHERE LOWER(descripcion) = LOWER(?) AND activo = TRUE',
         [ingredienteInput.descripcion.trim()]
     );
     if ((rows as RowDataPacket[]).length > 0) {
@@ -46,18 +46,14 @@ export class IngredienteRepository implements Repository<Ingrediente> {
  
     }
     public async delete(item: { id: string }): Promise<Ingrediente | undefined> {
-        try {
-          const ingredienteToDelete = await this.findOne(item);
-          const ingredienteId = Number.parseInt(item.id);
-      
-          
-          await pool.query('DELETE FROM ingredientes WHERE codIngrediente = ?', [ingredienteId]);
-      
-          return ingredienteToDelete;
-        } catch (error: any) {
-          throw new Error(error.message || 'No se pudo eliminar el ingrediente');
-        }
-      }
+        const ingredienteToDelete = await this.findOne(item);
+        if (!ingredienteToDelete) return undefined;
+        const ingredienteId = Number.parseInt(item.id);
+
+        // Borrado lógico: marcar como inactivo para preservar relaciones con hamburguesas
+        await pool.query('UPDATE ingredientes SET activo = FALSE WHERE codIngrediente = ?', [ingredienteId]);
+        return ingredienteToDelete;
+    }
     
     
     

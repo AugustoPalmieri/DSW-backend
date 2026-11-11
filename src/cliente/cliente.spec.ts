@@ -1,9 +1,17 @@
 import request from 'supertest';
 import { app } from '../app.js';
+import { getAdminToken, getClientToken, cleanupCliente } from '../test-helpers.js';
 
 describe('Cliente API', () => {
   let clienteId: string;
+  let clientToken: string;
+  const adminToken = getAdminToken();
   const testEmail = `test${Date.now()}@test.com`;
+
+  afterAll(async () => {
+    // Rollback / Limpieza de los datos creados
+    await cleanupCliente(clienteId, testEmail);
+  });
 
   describe('POST /api/clientes', () => {
     it('Cliente nuevo Juan Perez creado', async () => {
@@ -54,6 +62,7 @@ describe('Cliente API', () => {
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('token');
       expect(response.body.message).toBe('Inicio de sesión exitoso');
+      clientToken = response.body.token;
     });
 
     it('debería fallar con credenciales incorrectas', async () => {
@@ -73,7 +82,9 @@ describe('Cliente API', () => {
 
   describe('GET /api/clientes', () => {
     it('debería devolver todos los clientes', async () => {
-      const response = await request(app).get('/api/clientes');
+      const response = await request(app)
+        .get('/api/clientes')
+        .set('Authorization', `Bearer ${adminToken}`);
       expect(response.status).toBe(200);
       expect(response.body.data).toBeInstanceOf(Array);
     });
@@ -81,13 +92,19 @@ describe('Cliente API', () => {
 
   describe('GET /api/clientes/:id', () => {
     it('debería devolver un cliente por ID', async () => {
-      const response = await request(app).get(`/api/clientes/${clienteId}`);
+      const token = clientToken || getClientToken(Number(clienteId), testEmail);
+      const response = await request(app)
+        .get(`/api/clientes/${clienteId}`)
+        .set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('idCliente');
     });
 
     it('debería devolver 404 si no encuentra el cliente', async () => {
-      const response = await request(app).get('/api/clientes/9999');
+      const token = clientToken || getClientToken(9999, 'notfound@test.com');
+      const response = await request(app)
+        .get('/api/clientes/9999')
+        .set('Authorization', `Bearer ${token}`);
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('Cliente Not Found');
     });

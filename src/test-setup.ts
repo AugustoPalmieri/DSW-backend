@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { pool } from './shared/db/conn.mysql.js';
 
 // Establecer entorno de test
 process.env.NODE_ENV = 'test';
@@ -22,5 +23,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  try {
+    await pool.end();
+  } catch (e) {
+    // ignorar si no estaba abierto o ya se cerró
+  }
   console.log('✅ Tests completados');
 });

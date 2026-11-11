@@ -118,13 +118,16 @@ async function update(req: Request, res: Response) {
 
 
 async function remove(req: Request,res: Response){
-    const id = req.params.idCliente 
-    const cliente =await repository.delete({id})
-    if(!cliente){
-        res.status(404).send({message: 'Cliente Not Found'})
-    } else{
-        res.status(200).send({message: 'CLIENTE ELIMINADO CORRECTAMENTE'})
-    } 
+    try {
+        const id = req.params.idCliente 
+        const cliente = await repository.delete({id})
+        if(!cliente){
+            return res.status(404).send({message: 'Cliente Not Found'})
+        }
+        return res.status(200).send({message: 'CLIENTE ELIMINADO CORRECTAMENTE'})
+    } catch (error: any) {
+        return res.status(500).send({message: error.message || 'Error al eliminar el cliente'})
+    }
 }
 async function findByEmail(req: Request, res: Response) {
         const email = req.params.email;

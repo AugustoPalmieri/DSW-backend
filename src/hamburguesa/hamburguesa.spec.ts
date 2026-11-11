@@ -1,8 +1,15 @@
 import request from 'supertest';
 import { app } from '../app.js';
+import { getAdminToken, cleanupHamburguesa } from '../test-helpers.js';
 
 describe('Hamburguesa API', () => {
   let hamburguesaId: string;
+  const adminToken = getAdminToken();
+
+  afterAll(async () => {
+    // Rollback / Limpieza de la hamburguesa de prueba y sus precios asociados
+    await cleanupHamburguesa(hamburguesaId);
+  });
 
   describe('GET /api/hamburguesas', () => {
     it('debería devolver todas las hamburguesas', async () => {
@@ -22,6 +29,7 @@ describe('Hamburguesa API', () => {
 
       const response = await request(app)
         .post('/api/hamburguesas')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(nuevaHamburguesa);
 
       expect(response.status).toBe(201);
@@ -55,6 +63,7 @@ describe('Hamburguesa API', () => {
 
       const response = await request(app)
         .put(`/api/hamburguesas/${hamburguesaId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(hamburguesaActualizada);
 
       expect(response.status).toBe(200);
@@ -64,6 +73,7 @@ describe('Hamburguesa API', () => {
     it('debería devolver 404 si no encuentra la hamburguesa', async () => {
       const response = await request(app)
         .put('/api/hamburguesas/9999')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({ nombre: 'Test' });
 
       expect(response.status).toBe(404);
@@ -73,7 +83,9 @@ describe('Hamburguesa API', () => {
 
   describe('DELETE /api/hamburguesas/:id', () => {
     it('debería eliminar una hamburguesa', async () => {
-      const response = await request(app).delete(`/api/hamburguesas/${hamburguesaId}`);
+      const response = await request(app)
+        .delete(`/api/hamburguesas/${hamburguesaId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('HAMBURGUESA ELIMINADA CORRECTAMENTE');
     });

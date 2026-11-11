@@ -7,7 +7,7 @@ import { ResultSetHeader, RowDataPacket } from "mysql2";
 
 export class ClienteRepository implements Repository<Cliente>{
     public async findAll(): Promise< Cliente[]| undefined>  {
-        const [clientes] = await pool.query('select * from clientes')
+        const [clientes] = await pool.query('select * from clientes WHERE activo = TRUE')
         return clientes as Cliente[]  
     }
     public async findOne(item: { id: string }): Promise<Cliente | undefined> {
@@ -16,7 +16,7 @@ export class ClienteRepository implements Repository<Cliente>{
         if (isNaN(id)) {
             throw new Error('ID no válido');  // Lanza un error si el ID no es un número
         }
-        const [clientes] = await pool.query<RowDataPacket[]>('select * from clientes where idCliente = ?', [id]);
+        const [clientes] = await pool.query<RowDataPacket[]>('select * from clientes where idCliente = ? AND activo = TRUE', [id]);
         if (clientes.length === 0) {
             return undefined;
         }
@@ -57,14 +57,13 @@ export class ClienteRepository implements Repository<Cliente>{
     }
     
     public async delete(item: { id: string; }): Promise<Cliente | undefined>{
-        try{
-            const ClienteToDelete = await this.findOne(item)
-            const clienteId= Number.parseInt(item.id)
-            await pool.query('delete from clientes where idCliente =?', clienteId)
-            return ClienteToDelete
-        } catch(error: any) {
-            throw new Error('unable to delete Cliente')
-        }
+        const clienteToDelete = await this.findOne(item)
+        if (!clienteToDelete) return undefined
+        const clienteId = Number.parseInt(item.id)
+
+        // Borrado lógico: marcar como inactivo para preservar historial de pedidos
+        await pool.query('UPDATE clientes SET activo = FALSE WHERE idCliente = ?', [clienteId])
+        return clienteToDelete
     }
     public async findByEmail(email: string): Promise<Cliente | undefined> {
         const [clientes] = await pool.query<RowDataPacket[]>('SELECT * FROM clientes WHERE email = ?', [email]);

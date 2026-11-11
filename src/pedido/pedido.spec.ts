@@ -1,12 +1,16 @@
 import request from 'supertest';
 import { app } from '../app.js';
+import { getAdminToken, getClientToken, cleanupPedido, cleanupHamburguesa, cleanupCliente } from '../test-helpers.js';
 
 describe('Pedido API', () => {
   let pedidoId: string;
   let clienteId: string;
   let hamburguesaId: string;
+  const adminToken = getAdminToken();
+  let clientToken: string;
 
   beforeAll(async () => {
+    const testEmail = `testpedido${Date.now()}@test.com`;
     // Crear cliente de prueba
     const cliente = await request(app)
       .post('/api/clientes')
@@ -14,15 +18,17 @@ describe('Pedido API', () => {
         nombre: 'Test',
         apellido: 'Cliente',
         telefono: '123456789',
-        email: `testpedido${Date.now()}@test.com`,
+        email: testEmail,
         direccion: 'Test 123',
         password: 'password123'
       });
     clienteId = cliente.body.data.idCliente;
+    clientToken = getClientToken(Number(clienteId), testEmail);
 
-    // Crear hamburguesa de prueba
+    // Crear hamburguesa de prueba con token admin
     const hamburguesa = await request(app)
       .post('/api/hamburguesas')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         nombre: 'Hamburguesa Test Pedido',
         descripcion: 'Para test de pedidos',
@@ -31,9 +37,18 @@ describe('Pedido API', () => {
     hamburguesaId = hamburguesa.body.data.idHamburguesa;
   });
 
+  afterAll(async () => {
+    // Rollback / Limpieza en cascada respetando Foreign Keys
+    await cleanupPedido(pedidoId);
+    await cleanupHamburguesa(hamburguesaId);
+    await cleanupCliente(clienteId);
+  });
+
   describe('GET /api/pedidos', () => {
     it('debería devolver todos los pedidos', async () => {
-      const response = await request(app).get('/api/pedidos');
+      const response = await request(app)
+        .get('/api/pedidos')
+        .set('Authorization', `Bearer ${adminToken}`);
       expect(response.status).toBe(200);
       expect(response.body.data).toBeInstanceOf(Array);
     });
@@ -83,13 +98,17 @@ describe('Pedido API', () => {
 
   describe('GET /api/pedidos/:id', () => {
     it('debería devolver un pedido por ID', async () => {
-      const response = await request(app).get(`/api/pedidos/${pedidoId}`);
+      const response = await request(app)
+        .get(`/api/pedidos/${pedidoId}`)
+        .set('Authorization', `Bearer ${clientToken}`);
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('idPedido');
     });
 
     it('debería devolver 404 si no encuentra el pedido', async () => {
-      const response = await request(app).get('/api/pedidos/9999');
+      const response = await request(app)
+        .get('/api/pedidos/9999')
+        .set('Authorization', `Bearer ${clientToken}`);
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('Pedido No Encontrado');
     });
@@ -101,6 +120,7 @@ describe('Pedido API', () => {
 
       const response = await request(app)
         .put(`/api/pedidos/${pedidoId}/estado`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(nuevoEstado);
 
       expect(response.status).toBe(200);
@@ -110,6 +130,7 @@ describe('Pedido API', () => {
     it('debería fallar si no se proporciona estado', async () => {
       const response = await request(app)
         .put(`/api/pedidos/${pedidoId}/estado`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({});
 
       expect(response.status).toBe(400);

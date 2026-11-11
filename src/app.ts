@@ -22,7 +22,7 @@ app.use(cors({
 }));
 
 
-app.use('/uploads', express.static(path.resolve('../uploads')));
+app.use('/uploads', express.static(path.resolve('./uploads')));
 app.use('/api/clientes', clienteRouter);
 app.use('/api/hamburguesas', hamburguesaRouter);
 app.use('/api/ingredientes', ingredienteRouter);

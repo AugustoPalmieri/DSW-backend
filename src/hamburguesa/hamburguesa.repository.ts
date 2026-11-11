@@ -7,7 +7,7 @@ export class HamburguesaRepository implements Repository<Hamburguesa> {
 
     public async findAll(): Promise<Hamburguesa[] | undefined> {
         const [hamburguesas] = await pool.query<RowDataPacket[]>(
-            "SELECT idHamburguesa, nombre, descripcion, imagen FROM hamburguesas"
+            "SELECT idHamburguesa, nombre, descripcion, imagen FROM hamburguesas WHERE activa = TRUE"
         );
         return hamburguesas as Hamburguesa[];
     }
@@ -15,7 +15,7 @@ export class HamburguesaRepository implements Repository<Hamburguesa> {
     public async findOne(item: { id: string }): Promise<Hamburguesa | undefined> {
         const id = Number.parseInt(item.id);
         const [hamburguesas] = await pool.query<RowDataPacket[]>(
-            "SELECT idHamburguesa, nombre, descripcion, imagen FROM hamburguesas WHERE idHamburguesa = ?",
+            "SELECT idHamburguesa, nombre, descripcion, imagen FROM hamburguesas WHERE idHamburguesa = ? AND activa = TRUE",
             [id]
         );
         if (hamburguesas.length === 0) return undefined;
@@ -84,15 +84,13 @@ export class HamburguesaRepository implements Repository<Hamburguesa> {
     }
 
     public async delete(item: { id: string }): Promise<Hamburguesa | undefined> {
-        try {
-            const hamburguesaToDelete = await this.findOne(item);
-            if (!hamburguesaToDelete) return undefined;
-            const hamburguesaId = Number.parseInt(item.id);
-            await pool.query('DELETE FROM hamburguesas WHERE idHamburguesa = ?', [hamburguesaId]);
-            return hamburguesaToDelete;
-        } catch (error: any) {
-            throw new Error(error.message || 'Error al eliminar la hamburguesa');
-        }
+        const hamburguesaToDelete = await this.findOne(item);
+        if (!hamburguesaToDelete) return undefined;
+        const hamburguesaId = Number.parseInt(item.id);
+
+        // Borrado lógico: marcar como inactiva para preservar historial de pedidos
+        await pool.query('UPDATE hamburguesas SET activa = FALSE WHERE idHamburguesa = ?', [hamburguesaId]);
+        return hamburguesaToDelete;
     }
 
     public async getPrecioById(idHamburguesa: number): Promise<number | undefined> {
