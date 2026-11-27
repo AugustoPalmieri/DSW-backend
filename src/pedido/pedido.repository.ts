@@ -118,6 +118,7 @@ export class PedidoRepository implements Repository<Pedido> {
     }
 
     const pedidoRow = {
+        fechaPedido: pedidoInput.fechaPedido || new Date(),
         modalidad: pedidoInput.modalidad,
         montoTotal,
         estado: pedidoInput.estado,
