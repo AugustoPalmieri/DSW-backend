@@ -1,5 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -11,16 +10,20 @@ import precioRouter from './precio/precio.routes.js';
 import contactoRoutes from './contacto/contacto.routes.js';
 import adminRoutes from './adminstrador/admin.routes.js';
 import { deliveryRouter } from './delivery/delivery.routes.js';
+import { errorHandler } from './middleware/errorHandler.js';
+
 export const app = express();
 
-
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:4200')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.use(express.json());
 
 app.use(cors({
-  origin: 'http://localhost:4200'
+  origin: allowedOrigins
 }));
-
 
 app.use('/uploads', express.static(path.resolve('./uploads')));
 app.use('/api/clientes', clienteRouter);
@@ -31,16 +34,9 @@ app.use('/api/precios', precioRouter);
 app.use('/contacto', contactoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/delivery', deliveryRouter);
+
 app.use((_, res) => {
   return res.status(404).send({ message: 'Resource Not Found' });
 });
 
-// Solo iniciar el servidor si no estamos en modo test
-/*
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000/');
-  });
-}
-
-export {app}; */
+app.use(errorHandler);
